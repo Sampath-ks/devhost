@@ -8,7 +8,7 @@ export default function Topbar() {
 
   let role: Role | null = null
   if (location.pathname.startsWith('/farmer')) role = 'farmer'
-  else if (location.pathname.startsWith('/buyer')) role = 'buyer'
+  else if (location.pathname.startsWith('/buyer') || location.pathname.startsWith('/user')) role = 'buyer'
   else if (location.pathname.startsWith('/store')) role = 'store'
   else if (location.pathname.startsWith('/auction')) role = 'auction'
 
