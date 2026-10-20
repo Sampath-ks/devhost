@@ -1,11 +1,28 @@
-// App.tsx
-import { BrowserRouter } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, useNavigate } from 'react-router-dom'
 import { ColorFillProvider, ColorFillRouterBridge } from '@/components/transitions/ColorFillTransition'
 import AppRoutes from '@/routes'
 import { useLenis } from '@/hooks/useLenis'
 
 function AppContent() {
   useLenis()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Trigger admin dashboard when Ctrl + Shift are pressed together
+      const isCtrlAndShift =
+        (e.ctrlKey && (e.shiftKey || e.key === 'Shift')) ||
+        (e.shiftKey && (e.ctrlKey || e.key === 'Control'))
+
+      if (isCtrlAndShift) {
+        navigate('/admin')
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [navigate])
 
   return (
     <div className="relative min-h-screen bg-bg text-text">
