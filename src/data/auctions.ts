@@ -1,0 +1,2 @@
+// auctions.ts
+export default {}

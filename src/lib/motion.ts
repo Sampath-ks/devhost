@@ -1,0 +1,2 @@
+// motion.ts
+export default {}

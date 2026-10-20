@@ -1,0 +1,2 @@
+// farmers.ts
+export default {}

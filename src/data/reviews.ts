@@ -1,0 +1,2 @@
+// reviews.ts
+export default {}

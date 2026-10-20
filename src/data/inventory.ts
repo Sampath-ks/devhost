@@ -1,0 +1,2 @@
+// inventory.ts
+export default {}

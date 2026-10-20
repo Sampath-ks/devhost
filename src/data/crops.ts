@@ -1,0 +1,2 @@
+// crops.ts
+export default {}

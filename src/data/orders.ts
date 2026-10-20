@@ -1,0 +1,2 @@
+// orders.ts
+export default {}

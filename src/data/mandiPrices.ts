@@ -1,0 +1,2 @@
+// mandiPrices.ts
+export default {}
