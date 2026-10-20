@@ -1,2 +1,2 @@
 // index.ts
-export default {}
+export type Role = 'farmer' | 'buyer' | 'store' | 'auction'

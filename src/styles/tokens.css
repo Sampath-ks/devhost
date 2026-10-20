@@ -1,1 +1,29 @@
 /* tokens.css */
+:root {
+  /* Base */
+  --bg: #0B0F0A;
+  --surface: #131A12;
+  --surface-2: #1B241A;
+  --border: rgba(243, 235, 221, 0.1);
+
+  /* Text */
+  --text: #F3EBDD;
+  --text-muted: rgba(243, 235, 221, 0.6);
+
+  /* Accent */
+  --gold: #D9A441;
+
+  /* Role colors */
+  --farmer: #3F8F4A;
+  --buyer: #D98A2B;
+  --store: #3E7C8C;
+  --auction: #A8442F;
+
+  /* Radii */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+
+  /* Easing */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
