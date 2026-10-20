@@ -1,3 +1,3 @@
-# [PROJECT_NAME]
+# KisanSetu
 
-Direct market-access platform for marginal farmers (frontend prototype)
+Bridging Marginal Farmers Directly to Fair Markets
