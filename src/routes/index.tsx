@@ -7,6 +7,7 @@ import FarmerDashboard from '@/pages/farmer/FarmerDashboard'
 import Marketplace from '@/pages/buyer/Marketplace'
 import StoreInventory from '@/pages/store/StoreInventory'
 import AuctionList from '@/pages/auction/AuctionList'
+import Lab from '@/pages/Lab'
 
 export default function AppRoutes() {
   return (
@@ -14,6 +15,7 @@ export default function AppRoutes() {
       <Route path="/" element={<Hub />} />
       <Route path="/login" element={<LoginPage initialMode="login" />} />
       <Route path="/register" element={<LoginPage initialMode="register" />} />
+      <Route path="/lab" element={<Lab />} />
       <Route element={<DashboardShell />}>
         <Route path="/farmer" element={<FarmerDashboard />} />
         <Route path="/buyer" element={<Marketplace />} />
