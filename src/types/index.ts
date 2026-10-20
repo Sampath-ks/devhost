@@ -24,6 +24,8 @@ export interface CropListing {
   qualityGrade: 'A' | 'B' | 'C'
   harvestDate: string // YYYY-MM-DD
   isOrganic?: boolean
+  status?: 'Available' | 'Reserved' | 'Sold'
+  district?: string
 }
 
 export interface Farmer {

@@ -1,6 +1,7 @@
 // App.tsx
 import { BrowserRouter } from 'react-router-dom'
 import { ColorFillProvider, ColorFillRouterBridge } from '@/components/transitions/ColorFillTransition'
+import { AppStoreProvider } from '@/lib/store'
 import AppRoutes from '@/routes'
 import { useLenis } from '@/hooks/useLenis'
 
@@ -29,7 +30,9 @@ export default function App() {
     <ColorFillProvider>
       <BrowserRouter>
         <ColorFillRouterBridge />
-        <AppContent />
+        <AppStoreProvider>
+          <AppContent />
+        </AppStoreProvider>
       </BrowserRouter>
     </ColorFillProvider>
   )
