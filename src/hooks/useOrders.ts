@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { MarketplaceOrder, OrderStatus } from '@/types/order'
+import type { MarketplaceOrder } from '@/types/order'
 import { sendNotification } from '@/hooks/useNotifications'
 import { getSession } from '@/lib/session'
 

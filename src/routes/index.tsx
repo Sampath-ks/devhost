@@ -4,19 +4,23 @@ import { ProtectedRoute, PublicOnlyRoute } from '@/routes/ProtectedRoute'
 import Hub from '@/pages/Hub'
 import LoginPage from '@/pages/auth/LoginPage'
 import FarmerDashboard from '@/pages/farmer/FarmerDashboard'
+import MyProduce from '@/pages/farmer/MyProduce'
 import ProduceListing from '@/pages/farmer/ProduceListing'
+import MarketPrices from '@/pages/farmer/MarketPrices'
 import Marketplace from '@/pages/buyer/Marketplace'
 import StoreInventory from '@/pages/store/StoreInventory'
 import AuctionList from '@/pages/auction/AuctionList'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
+import Lab from '@/pages/Lab'
 
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Hub />} />
+      <Route path="/lab" element={<Lab />} />
       <Route path="/admin" element={<AdminDashboard />} />
 
-      {/* Only for logged-out visitors */}
+      {/* Auth routes */}
       <Route element={<PublicOnlyRoute />}>
         <Route path="/login" element={<LoginPage initialMode="login" />} />
         <Route path="/register" element={<LoginPage initialMode="register" />} />
@@ -26,7 +30,10 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute allow={['farmer']} />}>
         <Route element={<DashboardShell />}>
           <Route path="/farmer" element={<FarmerDashboard />} />
+          <Route path="/farmer/produce" element={<MyProduce />} />
           <Route path="/farmer/listings" element={<ProduceListing />} />
+          <Route path="/farmer/add" element={<ProduceListing />} />
+          <Route path="/farmer/prices" element={<MarketPrices />} />
         </Route>
       </Route>
 
@@ -38,7 +45,7 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
-      {/* Any logged-in account (change later if needed) */}
+      {/* Portals open to logged-in accounts */}
       <Route element={<ProtectedRoute allow={['farmer', 'user']} />}>
         <Route element={<DashboardShell />}>
           <Route path="/store" element={<StoreInventory />} />

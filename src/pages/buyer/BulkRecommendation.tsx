@@ -1,7 +1,5 @@
-import { Sparkles, ShoppingBag, MapPin, CalendarDays, User, ArrowRight, TrendingDown } from 'lucide-react'
+import { Sparkles, ShoppingBag, MapPin, User } from 'lucide-react'
 import type { ProduceListing, QualityGrade } from '@/lib/produceTypes'
-import { getPriceSuggestion } from '@/lib/priceService'
-import { MARKETS } from '@/data/mandiPrices'
 
 const CROP_IMAGES: Record<string, string> = {
   banana: '/assets/images/crops/banana.png',
@@ -74,12 +72,6 @@ export default function BulkRecommendation({
         {recommended.map((listing) => {
           const cropKey = (listing.cropName || '').trim().toLowerCase()
           const imageSrc = CROP_IMAGES[cropKey]
-          const priceBenchmark = getPriceSuggestion({
-            crop: listing.cropName,
-            market: MARKETS[0] || 'Mangaluru',
-            askingPrice: listing.askingPrice,
-            grade: listing.qualityGrade,
-          })
 
           return (
             <div

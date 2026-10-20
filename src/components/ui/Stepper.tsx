@@ -65,7 +65,6 @@ export default function OrderStepper({
           const Icon = step.icon
           const isDone = idx < activeIndex
           const isCurrent = idx === activeIndex
-          const isPending = idx > activeIndex
 
           return (
             <div key={step.id} className="relative z-10 flex flex-col items-center">

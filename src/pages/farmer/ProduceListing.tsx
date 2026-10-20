@@ -1,250 +1,470 @@
-import { useState } from 'react'
-import { Plus, Pencil, Ban, MapPin, CalendarDays, Sprout } from 'lucide-react'
+// ProduceListing.tsx
+import React, { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Check, CheckCircle2, AlertCircle, Info, Sparkles, ArrowRight } from 'lucide-react'
+import { useAppStore } from '@/lib/store'
 import { useListings } from '@/hooks/useListings'
-import type { ListingInput, ListingStatus, ProduceListing as Listing, QualityGrade } from '@/lib/produceTypes'
-import type { ListingErrors } from '@/lib/validateListing'
+import { getMandiPricesForCrop } from '@/data/mandiPrices'
+import { formatINR } from '@/lib/utils'
 
-interface FormState {
-  cropName: string
-  variety: string
-  quantityKg: string
-  askingPrice: string
-  qualityGrade: '' | QualityGrade
-  harvestDate: string
-  location: string
-}
+const DISTRICTS = [
+  'Nashik',
+  'Pune',
+  'Varanasi',
+  'Mandya',
+  'Guntur',
+  'Ludhiana',
+  'Kolar',
+  'Sindhudurg',
+  'Coimbatore',
+  'Palakkad',
+  'Jaipur',
+  'Cuddalore',
+]
 
-const emptyForm: FormState = {
-  cropName: '',
-  variety: '',
-  quantityKg: '',
-  askingPrice: '',
-  qualityGrade: '',
-  harvestDate: '',
-  location: '',
-}
-
-const statusStyles: Record<ListingStatus, string> = {
-  Active: 'bg-green-100 text-green-800',
-  Supplied: 'bg-blue-100 text-blue-800',
-  'Sold Out': 'bg-amber-100 text-amber-800',
-  Closed: 'bg-gray-200 text-gray-600',
-}
-
-function toInput(f: FormState): ListingInput {
-  return {
-    farmerId: '', // overwritten by the hook
-    cropName: f.cropName,
-    variety: f.variety,
-    quantityKg: Number(f.quantityKg),
-    askingPrice: Number(f.askingPrice),
-    qualityGrade: f.qualityGrade as QualityGrade,
-    harvestDate: f.harvestDate,
-    location: f.location,
-  }
-}
-
-function toForm(l: Listing): FormState {
-  return {
-    cropName: l.cropName,
-    variety: l.variety,
-    quantityKg: String(l.quantityKg),
-    askingPrice: String(l.askingPrice),
-    qualityGrade: l.qualityGrade,
-    harvestDate: l.harvestDate,
-    location: l.location,
-  }
-}
-
-const inputClass =
-  'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600/20'
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-gray-700">{label}</span>
-      {children}
-      {error && <span className="mt-1 block text-xs text-red-600">{error}</span>}
-    </label>
-  )
-}
+const EASE_OUT = [0.22, 1, 0.36, 1] as const
 
 export default function ProduceListing() {
-  const { listings, createListing, updateListing, setStatus } = useListings()
-  const [form, setForm] = useState<FormState>(emptyForm)
-  const [errors, setErrors] = useState<ListingErrors>({})
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [showForm, setShowForm] = useState(false)
+  const navigate = useNavigate()
+  const { crops, addListing, currentFarmer } = useAppStore()
+  const { createListing } = useListings()
 
-  const set = (key: keyof FormState) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((prev) => ({ ...prev, [key]: e.target.value }))
+  // Form State
+  const [selectedCropId, setSelectedCropId] = useState<string>(crops[0]?.id || 'crop-tomato')
+  const [quantity, setQuantity] = useState<string>('')
+  const [pricePerUnit, setPricePerUnit] = useState<string>('')
+  const [qualityGrade, setQualityGrade] = useState<'A' | 'B' | 'C'>('A')
+  const [harvestDate, setHarvestDate] = useState<string>(new Date().toISOString().slice(0, 10))
+  const [district, setDistrict] = useState<string>(currentFarmer.district || 'Nashik')
+  const [isOrganic, setIsOrganic] = useState<boolean>(false)
 
-  function openCreate() {
-    setForm(emptyForm)
-    setErrors({})
-    setEditingId(null)
-    setShowForm(true)
-  }
+  // Success state
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false)
 
-  function openEdit(l: Listing) {
-    setForm(toForm(l))
-    setErrors({})
-    setEditingId(l.id)
-    setShowForm(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  const selectedCrop = useMemo(() => {
+    return crops.find((c) => c.id === selectedCropId) || crops[0]
+  }, [crops, selectedCropId])
 
-  function closeForm() {
-    setShowForm(false)
-    setEditingId(null)
-    setErrors({})
-  }
+  // Live Mandi guidance
+  const mandiInfo = useMemo(() => {
+    return getMandiPricesForCrop(selectedCrop.id)
+  }, [selectedCrop.id])
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const input = toInput(form)
-    const result = editingId ? updateListing(editingId, input) : createListing(input)
-    if (!result.ok) {
-      setErrors(result.errors)
-      return
+  const parsedPrice = parseFloat(pricePerUnit) || 0
+  const parsedQty = parseFloat(quantity) || 0
+
+  const priceStatus = useMemo(() => {
+    if (!parsedPrice) return null
+    if (parsedPrice < mandiInfo.minSuggestedPrice) {
+      return {
+        type: 'below',
+        label: 'Below Range',
+        color: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+        advice: `Priced below mandi floor (₹${mandiInfo.minSuggestedPrice}). Fast liquidation likely, but you could realize higher margins.`,
+      }
     }
-    closeForm()
-  }
+    if (parsedPrice > mandiInfo.maxSuggestedPrice) {
+      return {
+        type: 'above',
+        label: 'Above Range',
+        color: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+        advice: `Priced above average mandi ceiling (₹${mandiInfo.maxSuggestedPrice}). Ensure Grade A sorting to justify premium quotes.`,
+      }
+    }
+    return {
+      type: 'fair',
+      label: 'Fair Market Price',
+      color: 'bg-farmer/15 text-farmer border-farmer/40',
+      advice: `Optimal fair price aligned with current arrivals (₹${mandiInfo.minSuggestedPrice} – ₹${mandiInfo.maxSuggestedPrice}). High buyer interest expected.`,
+    }
+  }, [parsedPrice, mandiInfo])
 
-  const today = new Date().toISOString().split('T')[0]
+  // Visual marker position (0% to 100%)
+  const markerPercent = useMemo(() => {
+    const maxScale = mandiInfo.maxSuggestedPrice * 1.45
+    if (!parsedPrice) return 0
+    return Math.min(100, Math.max(0, (parsedPrice / maxScale) * 100))
+  }, [parsedPrice, mandiInfo.maxSuggestedPrice])
+
+  const rangeStartPercent = useMemo(() => {
+    const maxScale = mandiInfo.maxSuggestedPrice * 1.45
+    return (mandiInfo.minSuggestedPrice / maxScale) * 100
+  }, [mandiInfo])
+
+  const rangeEndPercent = useMemo(() => {
+    const maxScale = mandiInfo.maxSuggestedPrice * 1.45
+    return (mandiInfo.maxSuggestedPrice / maxScale) * 100
+  }, [mandiInfo])
+
+  // Validation
+  const errors = useMemo(() => {
+    const errs: Record<string, string> = {}
+    if (!selectedCropId) errs.crop = 'Select a crop'
+    if (!parsedQty || parsedQty <= 0) errs.quantity = 'Enter a valid quantity greater than 0'
+    if (!parsedPrice || parsedPrice <= 0) errs.price = 'Enter a valid price greater than ₹0'
+    if (!harvestDate) errs.harvestDate = 'Select harvest date'
+    if (!district) errs.district = 'Select farm district'
+    return errs
+  }, [selectedCropId, parsedQty, parsedPrice, harvestDate, district])
+
+  const isValid = Object.keys(errors).length === 0
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isValid || isSubmitted) return
+
+    // 1. Add to in-memory store for friend's MyProduce and Farmer Dashboard
+    addListing({
+      cropId: selectedCropId,
+      quantity: parsedQty,
+      pricePerUnit: parsedPrice,
+      qualityGrade,
+      harvestDate,
+      district,
+      isOrganic,
+      status: 'Available',
+    })
+
+    // 2. Add to persistent useListings so Buyer Marketplace & Recommendations receive it
+    createListing({
+      farmerId: currentFarmer.id,
+      cropName: selectedCrop.name,
+      variety: selectedCrop.hindiName || 'Standard',
+      quantityKg: parsedQty,
+      askingPrice: parsedPrice,
+      qualityGrade,
+      harvestDate,
+      location: district,
+    })
+
+    setIsSubmitted(true)
+
+    // Route to My Produce after short success animation
+    setTimeout(() => {
+      navigate('/farmer/produce')
+    }, 1300)
+  }
 
   return (
-    <div className="mx-auto max-w-5xl p-4">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">My Produce Listings</h1>
-          <p className="text-sm text-gray-600">Create and manage what you want to sell.</p>
-        </div>
-        {!showForm && (
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
-          >
-            <Plus size={16} /> New listing
-          </button>
-        )}
+    <div className="max-w-4xl mx-auto py-4">
+      {/* Page Header */}
+      <div className="border-b border-border pb-5 mb-8">
+        <span className="text-xs uppercase tracking-[0.2em] font-semibold text-farmer">
+          Direct Market Access
+        </span>
+        <h1 className="font-serif text-3xl sm:text-4xl text-text font-normal mt-1">
+          List New Harvest Produce
+        </h1>
+        <p className="text-sm text-text-muted mt-1.5">
+          Enter harvest volume, quality grade, and set your floor price with live mandi price intelligence.
+        </p>
       </div>
 
-      {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="mb-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-        >
-          <h2 className="mb-4 text-lg font-semibold">
-            {editingId ? 'Edit listing' : 'New listing'}
-          </h2>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Crop name" error={errors.cropName}>
-              <input className={inputClass} value={form.cropName} onChange={set('cropName')} placeholder="Tomato" />
-            </Field>
-            <Field label="Variety" error={errors.variety}>
-              <input className={inputClass} value={form.variety} onChange={set('variety')} placeholder="Hybrid" />
-            </Field>
-            <Field label="Quantity (kg)" error={errors.quantityKg}>
-              <input type="number" min="0" className={inputClass} value={form.quantityKg} onChange={set('quantityKg')} placeholder="200" />
-            </Field>
-            <Field label="Asking price (₹/kg)" error={errors.askingPrice}>
-              <input type="number" min="0" step="0.5" className={inputClass} value={form.askingPrice} onChange={set('askingPrice')} placeholder="24" />
-            </Field>
-            <Field label="Quality grade" error={errors.qualityGrade}>
-              <select className={inputClass} value={form.qualityGrade} onChange={set('qualityGrade')}>
-                <option value="">Select grade</option>
-                <option value="A">A (best)</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-              </select>
-            </Field>
-            <Field label="Harvest date" error={errors.harvestDate}>
-              <input type="date" max={today} className={inputClass} value={form.harvestDate} onChange={set('harvestDate')} />
-            </Field>
-            <div className="sm:col-span-2">
-              <Field label="Farm location" error={errors.location}>
-                <input className={inputClass} value={form.location} onChange={set('location')} placeholder="Village, District, State" />
-              </Field>
+      <AnimatePresence mode="wait">
+        {isSubmitted ? (
+          <motion.div
+            key="success-card"
+            className="p-10 rounded-3xl bg-surface border border-farmer/50 flex flex-col items-center justify-center text-center space-y-4 shadow-2xl shadow-farmer/20"
+            initial={{ opacity: 0, scale: 0.9, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.5, ease: EASE_OUT }}
+          >
+            <div className="w-16 h-16 rounded-full bg-farmer/20 border-2 border-farmer flex items-center justify-center text-farmer">
+              <CheckCircle2 className="w-9 h-9" />
             </div>
-          </div>
-
-          <div className="mt-5 flex gap-3">
-            <button type="submit" className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800">
-              {editingId ? 'Save changes' : 'Create listing'}
-            </button>
-            <button type="button" onClick={closeForm} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
-
-      {listings.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 p-10 text-center text-gray-500">
-          <Sprout className="mx-auto mb-2" />
-          No listings yet. Create your first one.
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {listings.map((l) => (
-            <div key={l.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="mb-3 flex items-start justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    {l.cropName} <span className="font-normal text-gray-500">({l.variety})</span>
-                  </h3>
-                  <p className="text-xs text-gray-400">ID: {l.id}</p>
-                </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[l.status]}`}>
-                  {l.status}
+            <h2 className="font-serif text-2xl sm:text-3xl text-text font-normal">
+              Listing Created Successfully!
+            </h2>
+            <p className="text-sm text-text-muted max-w-md">
+              Your {qualityGrade}-Grade {selectedCrop.name} batch ({quantity} {selectedCrop.unit} at ₹{pricePerUnit}/{selectedCrop.unit}) is now visible to verified bulk buyers.
+            </p>
+            <span className="inline-flex items-center gap-1.5 text-xs text-farmer font-mono">
+              Redirecting to My Produce... <ArrowRight className="w-3.5 h-3.5 animate-pulse" />
+            </span>
+          </motion.div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Field 1: Visual Crop Picker */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-text uppercase tracking-wider">
+                  1. Select Crop <span className="text-farmer">*</span>
+                </label>
+                <span className="text-xs text-text-muted">
+                  Chosen: <strong className="text-text">{selectedCrop.name}</strong> ({selectedCrop.hindiName})
                 </span>
               </div>
 
-              <dl className="grid grid-cols-3 gap-2 text-sm">
-                <div>
-                  <dt className="text-gray-500">Quantity</dt>
-                  <dd className="font-medium">{l.quantityKg} kg</dd>
-                </div>
-                <div>
-                  <dt className="text-gray-500">Price</dt>
-                  <dd className="font-medium">₹{l.askingPrice}/kg</dd>
-                </div>
-                <div>
-                  <dt className="text-gray-500">Grade</dt>
-                  <dd className="font-medium">{l.qualityGrade}</dd>
-                </div>
-              </dl>
+              {/* Crop Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {crops.map((crop) => {
+                  const isSelected = crop.id === selectedCropId
 
-              <div className="mt-3 space-y-1 text-xs text-gray-600">
-                <p className="flex items-center gap-1.5"><CalendarDays size={13} /> Harvested {l.harvestDate}</p>
-                <p className="flex items-center gap-1.5"><MapPin size={13} /> {l.location}</p>
+                  return (
+                    <button
+                      key={crop.id}
+                      type="button"
+                      onClick={() => setSelectedCropId(crop.id)}
+                      className={`relative flex flex-col items-center p-3 rounded-2xl border text-center transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-farmer ${
+                        isSelected
+                          ? 'bg-farmer/15 border-farmer shadow-lg shadow-farmer/15 scale-[1.02]'
+                          : 'bg-surface border-border hover:border-border/80 hover:bg-surface-2/60'
+                      }`}
+                    >
+                      <img
+                        src={crop.image}
+                        alt={crop.name}
+                        className="w-12 h-12 object-contain mb-2 filter drop-shadow"
+                      />
+                      <span className="text-xs font-semibold text-text">{crop.name}</span>
+                      <span className="text-[10px] text-text-muted">{crop.hindiName}</span>
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-farmer text-text flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5" />
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Field 2 & 3: Quantity & Asking Price with Live Mandi Comparison */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-surface/60 border border-border rounded-3xl p-6 sm:p-7">
+              {/* Quantity */}
+              <div className="space-y-2">
+                <label htmlFor="harvest-qty" className="text-xs font-semibold text-text uppercase tracking-wider block">
+                  2. Harvest Quantity ({selectedCrop.unit}) <span className="text-farmer">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="harvest-qty"
+                    type="number"
+                    step="any"
+                    placeholder={`e.g. 500`}
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    className="w-full bg-surface-2 border border-border rounded-xl px-4 py-3 text-text text-base focus:outline-none focus:border-farmer"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-mono text-text-muted">
+                    {selectedCrop.unit}
+                  </span>
+                </div>
+                {errors.quantity && (
+                  <p className="text-xs text-rose-400 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {errors.quantity}
+                  </p>
+                )}
               </div>
 
-              {l.status !== 'Closed' && (
-                <div className="mt-4 flex gap-2">
-                  <button onClick={() => openEdit(l)} className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium hover:bg-gray-50">
-                    <Pencil size={13} /> Edit
-                  </button>
-                  <button onClick={() => setStatus(l.id, 'Closed')} className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50">
-                    <Ban size={13} /> Close
-                  </button>
+              {/* Price Per Unit */}
+              <div className="space-y-2">
+                <label htmlFor="harvest-price" className="text-xs font-semibold text-text uppercase tracking-wider block">
+                  3. Farmgate Price per {selectedCrop.unit} (₹) <span className="text-farmer">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-farmer">
+                    ₹
+                  </span>
+                  <input
+                    id="harvest-price"
+                    type="number"
+                    step="any"
+                    placeholder={`e.g. ${mandiInfo.currentModalPrice}`}
+                    value={pricePerUnit}
+                    onChange={(e) => setPricePerUnit(e.target.value)}
+                    className="w-full bg-surface-2 border border-border rounded-xl pl-8 pr-4 py-3 text-text text-base focus:outline-none focus:border-farmer"
+                  />
                 </div>
-              )}
+                {errors.price && (
+                  <p className="text-xs text-rose-400 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {errors.price}
+                  </p>
+                )}
+              </div>
+
+              {/* LIVE PRICE GUIDANCE WIDGET */}
+              <div className="sm:col-span-2 pt-2 border-t border-border/70 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-gold" />
+                    <span className="text-xs font-semibold text-text uppercase tracking-wider">
+                      Live Mandi Price Guidance ({selectedCrop.name})
+                    </span>
+                  </div>
+                  {priceStatus && (
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${priceStatus.color}`}
+                    >
+                      {priceStatus.label}
+                    </span>
+                  )}
+                </div>
+
+                {/* Animated Horizontal Price Spectrum */}
+                <div className="space-y-1.5">
+                  <div className="relative h-4 bg-surface-2 rounded-full overflow-hidden border border-border">
+                    {/* Mandi Suggested Fair Window */}
+                    <div
+                      className="absolute top-0 bottom-0 bg-farmer/35 border-x border-farmer/60"
+                      style={{
+                        left: `${rangeStartPercent}%`,
+                        width: `${rangeEndPercent - rangeStartPercent}%`,
+                      }}
+                      title={`Mandi Range: ₹${mandiInfo.minSuggestedPrice} – ₹${mandiInfo.maxSuggestedPrice}`}
+                    />
+                    {/* Your Price Marker */}
+                    {parsedPrice > 0 && (
+                      <motion.div
+                        className="absolute top-0 bottom-0 w-2.5 bg-gold rounded-full -translate-x-1/2 shadow-md shadow-gold/50"
+                        style={{ left: `${markerPercent}%` }}
+                        layout
+                        transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex justify-between text-[11px] text-text-muted tabular-nums">
+                    <span>₹0</span>
+                    <span className="text-farmer font-medium">
+                      Fair Range: ₹{mandiInfo.minSuggestedPrice} – ₹{mandiInfo.maxSuggestedPrice}/{selectedCrop.unit}
+                    </span>
+                    <span>₹{Math.round(mandiInfo.maxSuggestedPrice * 1.45)}+</span>
+                  </div>
+                </div>
+
+                {/* Price Advice Note */}
+                {priceStatus ? (
+                  <p className="text-xs text-text-muted leading-relaxed">
+                    💡 <strong className="text-text">{priceStatus.label}:</strong> {priceStatus.advice}
+                  </p>
+                ) : (
+                  <p className="text-xs text-text-muted flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 shrink-0 text-text-muted" />
+                    Type a floor price to see how it benchmarks against today's local mandi arrivals.
+                  </p>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            {/* Field 4, 5, 6: Quality, Harvest Date, District */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 bg-surface/60 border border-border rounded-3xl p-6 sm:p-7">
+              {/* Quality Grade Segmented Control */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-text uppercase tracking-wider block">
+                  4. Quality Grade <span className="text-farmer">*</span>
+                </label>
+                <div className="grid grid-cols-3 gap-1 bg-surface-2 p-1 rounded-xl border border-border">
+                  {(['A', 'B', 'C'] as const).map((grade) => {
+                    const isSelected = qualityGrade === grade
+                    return (
+                      <button
+                        key={grade}
+                        type="button"
+                        onClick={() => setQualityGrade(grade)}
+                        className={`py-2 text-xs font-semibold rounded-lg transition-all ${
+                          isSelected
+                            ? 'bg-farmer text-text shadow-sm'
+                            : 'text-text-muted hover:text-text hover:bg-surface'
+                        }`}
+                      >
+                        Grade {grade}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="text-[11px] text-text-muted">
+                  {qualityGrade === 'A' && 'Grade A: Premium, sorted, optimal sizing & moisture'}
+                  {qualityGrade === 'B' && 'Grade B: Standard retail, minor cosmetic blemishes'}
+                  {qualityGrade === 'C' && 'Grade C: Bulk processing, puree, or milling grade'}
+                </p>
+              </div>
+
+              {/* Harvest Date */}
+              <div className="space-y-2">
+                <label htmlFor="harvest-date" className="text-xs font-semibold text-text uppercase tracking-wider block">
+                  5. Harvest Date <span className="text-farmer">*</span>
+                </label>
+                <input
+                  id="harvest-date"
+                  type="date"
+                  value={harvestDate}
+                  onChange={(e) => setHarvestDate(e.target.value)}
+                  className="w-full bg-surface-2 border border-border rounded-xl px-3.5 py-2.5 text-text text-sm focus:outline-none focus:border-farmer"
+                />
+              </div>
+
+              {/* Location (District) */}
+              <div className="space-y-2">
+                <label htmlFor="farm-district" className="text-xs font-semibold text-text uppercase tracking-wider block">
+                  6. Farm District <span className="text-farmer">*</span>
+                </label>
+                <select
+                  id="farm-district"
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                  className="w-full bg-surface-2 border border-border rounded-xl px-3.5 py-2.5 text-text text-sm focus:outline-none focus:border-farmer"
+                >
+                  {DISTRICTS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Organic Certification Switch */}
+              <div className="sm:col-span-3 pt-3 border-t border-border flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium text-text block">Organic / Chemical-Free Harvest</span>
+                  <span className="text-xs text-text-muted">
+                    Check if grown with certified organic manure or natural zbnf methods.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isOrganic}
+                  onChange={(e) => setIsOrganic(e.target.checked)}
+                  className="w-5 h-5 accent-farmer rounded cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Estimated Total Bar & Submit Button */}
+            <div className="p-6 rounded-2xl bg-surface border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs uppercase text-text-muted font-semibold tracking-wider">
+                  Total Projected Value
+                </span>
+                <p className="text-2xl font-serif text-text font-normal">
+                  {parsedQty > 0 && parsedPrice > 0 ? (
+                    formatINR(parsedQty * parsedPrice)
+                  ) : (
+                    <span className="text-text-muted font-sans text-base">Fill quantity & price</span>
+                  )}
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={!isValid || isSubmitted}
+                className={`px-8 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                  isValid && !isSubmitted
+                    ? 'bg-farmer text-text hover:brightness-110 active:scale-95 shadow-lg shadow-farmer/20 cursor-pointer'
+                    : 'bg-surface-2 text-text-muted/50 border border-border cursor-not-allowed'
+                }`}
+              >
+                Publish Harvest Listing
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </form>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
