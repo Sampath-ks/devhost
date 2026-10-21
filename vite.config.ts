@@ -78,6 +78,11 @@ function localApiPlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), localApiPlugin()],
+  server: {
+    watch: {
+      ignored: ['**/src/data/db.json', '**/db.json'],
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

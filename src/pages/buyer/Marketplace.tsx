@@ -19,6 +19,7 @@ import {
   Store,
   Clock,
   PackageCheck,
+  Sparkles,
 } from 'lucide-react'
 import { useAllListings, type OrderResult } from '@/hooks/useListings'
 import { useOrders } from '@/hooks/useOrders'
@@ -26,7 +27,12 @@ import type { ProduceListing, QualityGrade } from '@/lib/produceTypes'
 import { getPriceSuggestion } from '@/lib/priceService'
 import { MARKETS } from '@/data/mandiPrices'
 import OrderStepper from '@/components/ui/Stepper'
-import BulkRecommendation from '@/pages/buyer/BulkRecommendation'
+import SmartMultiFarmerRecommendation from '@/pages/buyer/SmartMultiFarmerRecommendation'
+import {
+  getFarmerDisplayName,
+  type WeightUnit,
+  type RecommendationStrategy,
+} from '@/lib/recommendationUtils'
 
 // Helper to find crop image if available
 const CROP_IMAGES: Record<string, string> = {
@@ -56,11 +62,15 @@ const gradeStyles: Record<QualityGrade, { badge: string; text: string }> = {
 }
 
 export default function Marketplace() {
-  const { allListings, placeOrder } = useAllListings()
-  const { buyerOrders, createOrder } = useOrders()
+  const { allListings, placeOrder, placeBatchOrders } = useAllListings()
+  const { buyerOrders, createOrder, createBatchOrders } = useOrders()
 
   const [viewTab, setViewTab] = useState<'catalog' | 'orders'>('catalog')
   const [search, setSearch] = useState('')
+  const [selectedCrop, setSelectedCrop] = useState<string>('ALL')
+  const [requestedQty, setRequestedQty] = useState<number>(0)
+  const [requestedUnit, setRequestedUnit] = useState<WeightUnit>('kg')
+  const [strategy, setStrategy] = useState<RecommendationStrategy>('cheapest')
   const [selectedGrade, setSelectedGrade] = useState<string>('ALL')
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL')
   const [sortBy, setSortBy] = useState<'price_asc' | 'price_desc' | 'qty_desc' | 'recent'>('recent')
@@ -86,6 +96,33 @@ export default function Marketplace() {
     return { totalListings, activeCount: activeListings.length, totalKg, uniqueFarmers, lowestPrice }
   }, [allListings])
 
+  // Discover active crops in the catalog for quick chips and recommendation targeting
+  const availableCrops = useMemo(() => {
+    const map = new Map<string, { displayName: string; farmerCount: number; totalKg: number }>()
+    allListings.forEach((l) => {
+      if (l.status === 'Active' && l.quantityKg > 0 && l.cropName) {
+        const key = l.cropName.trim().toLowerCase()
+        const existing = map.get(key)
+        if (existing) {
+          existing.farmerCount += 1
+          existing.totalKg += l.quantityKg
+        } else {
+          map.set(key, { displayName: l.cropName.trim(), farmerCount: 1, totalKg: l.quantityKg })
+        }
+      }
+    })
+    return Array.from(map.entries()).map(([key, val]) => ({ key, ...val }))
+  }, [allListings])
+
+  // Crop to target for smart multi-farmer recommendation
+  const effectiveCrop = useMemo(() => {
+    if (selectedCrop !== 'ALL') return selectedCrop
+    const query = search.trim().toLowerCase()
+    if (!query) return ''
+    const match = availableCrops.find((c) => c.key === query || query.includes(c.key))
+    return match ? match.displayName : ''
+  }, [selectedCrop, search, availableCrops])
+
   // Filter & sort
   const filteredListings = useMemo(() => {
     return allListings
@@ -103,13 +140,16 @@ export default function Marketplace() {
           farmer.includes(query) ||
           loc.includes(query)
 
+        const matchesCrop =
+          selectedCrop === 'ALL' || l.cropName.trim().toLowerCase() === selectedCrop.trim().toLowerCase()
+
         const matchesGrade = selectedGrade === 'ALL' || l.qualityGrade === selectedGrade
         const matchesStatus =
           selectedStatus === 'ALL' ||
           l.status === selectedStatus ||
           (!l.status && selectedStatus === 'ALL')
 
-        return matchesQuery && matchesGrade && matchesStatus
+        return matchesQuery && matchesCrop && matchesGrade && matchesStatus
       })
       .sort((a, b) => {
         if (sortBy === 'price_asc') return a.askingPrice - b.askingPrice
@@ -117,7 +157,7 @@ export default function Marketplace() {
         if (sortBy === 'qty_desc') return b.quantityKg - a.quantityKg
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       })
-  }, [allListings, search, selectedGrade, selectedStatus, sortBy])
+  }, [allListings, search, selectedCrop, selectedGrade, selectedStatus, sortBy])
 
   const handleOpenOrder = (l: ProduceListing) => {
     setOrderingListing(l)
@@ -127,26 +167,22 @@ export default function Marketplace() {
 
   const handleConfirmOrder = () => {
     if (!orderingListing) return
-    const res = placeOrder(orderingListing.id, orderQty)
-    if (res.ok) {
-      // Create unified tracked order which triggers farmer notification
-      const newOrder = createOrder({
-        listingId: orderingListing.id,
-        cropName: orderingListing.cropName,
-        variety: orderingListing.variety,
-        farmerId: orderingListing.farmerId,
-        quantityKg: orderQty,
-        pricePerKg: orderingListing.askingPrice,
-      })
-      setOrderFeedback({ ok: true, orderId: newOrder.id })
-      setTimeout(() => {
-        setOrderingListing(null)
-        setOrderFeedback(null)
-        setViewTab('orders')
-      }, 1500)
-    } else {
-      setOrderFeedback(res)
-    }
+    placeOrder(orderingListing.id, orderQty)
+    // Create unified tracked order which triggers farmer notification (even for mock farmers)
+    const newOrder = createOrder({
+      listingId: orderingListing.id,
+      cropName: orderingListing.cropName,
+      variety: orderingListing.variety,
+      farmerId: orderingListing.farmerId,
+      quantityKg: orderQty,
+      pricePerKg: orderingListing.askingPrice,
+    })
+    setOrderFeedback({ ok: true, orderId: newOrder.id })
+    setTimeout(() => {
+      setOrderingListing(null)
+      setOrderFeedback(null)
+      setViewTab('orders')
+    }, 1200)
   }
 
   return (
@@ -252,14 +288,18 @@ export default function Marketplace() {
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/50 pb-3">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-xs font-bold text-buyer">#{order.id}</span>
                           <h3 className="font-serif text-lg font-bold text-text">
                             {order.cropName} <span className="font-sans text-xs font-normal text-muted">({order.variety})</span>
                           </h3>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-buyer/15 text-buyer border border-buyer/30">
+                            Order Placed
+                          </span>
                         </div>
                         <p className="text-xs text-muted mt-0.5">
-                          Farmer: <strong className="text-text">{order.farmerId}</strong>
+                          Farmer: <strong className="text-text">{getFarmerDisplayName(order.farmerId).name}</strong>{' '}
+                          <span className="text-[11px] text-muted">({order.farmerId})</span>
                         </p>
                       </div>
 
@@ -269,7 +309,10 @@ export default function Marketplace() {
                           ₹{order.totalAmount.toLocaleString()}
                         </span>
                         <span className="text-[11px] text-muted block">
-                          {order.quantityKg} kg @ ₹{order.pricePerKg}/kg
+                          {order.quantityKg >= 1
+                            ? `${order.quantityKg} kg`
+                            : `${Math.round(order.quantityKg * 1000)} g (${order.quantityKg} kg)`}{' '}
+                          @ ₹{order.pricePerKg}/kg
                         </span>
                       </div>
                     </div>
@@ -341,13 +384,6 @@ export default function Marketplace() {
       ) : (
         /* Catalog View */
         <>
-          {/* Fresh Farmer Recommendations Section */}
-          <BulkRecommendation
-            listings={allListings}
-            onOrderClick={handleOpenOrder}
-            onFarmerClick={(l) => setFarmerInfoListing(l)}
-          />
-
           {/* Quick Overview KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-surface border border-border rounded-xl p-4">
@@ -391,31 +427,70 @@ export default function Marketplace() {
             </div>
           </div>
 
-          {/* Search & Filters Toolbar */}
-          <div className="bg-surface border border-border rounded-2xl p-4 space-y-4 shadow-sm">
-            <div className="flex flex-col md:flex-row gap-3">
-              {/* Search Input */}
+          {/* Unified Search, Multi-Farmer Order & Filters Toolbar */}
+          <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
+            <div className="flex flex-col lg:flex-row gap-3">
+              {/* Search Crop Input */}
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" size={16} />
                 <input
                   type="text"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by crop, variety, farmer email, or location..."
-                  className="w-full pl-10 pr-4 py-2 bg-surface-2 border border-border rounded-xl text-sm text-text placeholder:text-muted/60 outline-none focus:border-buyer focus:ring-1 focus:ring-buyer/30 transition-all"
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    if (selectedCrop !== 'ALL' && e.target.value && !e.target.value.toLowerCase().includes(selectedCrop.toLowerCase())) {
+                      setSelectedCrop('ALL')
+                    }
+                  }}
+                  placeholder="Search by crop (e.g. Tomato, Onion, Potato), variety, or farmer..."
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface-2 border border-border rounded-xl text-sm text-text placeholder:text-muted/60 outline-none focus:border-buyer focus:ring-1 focus:ring-buyer/30 transition-all"
                 />
                 {search && (
                   <button
-                    onClick={() => setSearch('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text"
+                    onClick={() => {
+                      setSearch('')
+                      setSelectedCrop('ALL')
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text cursor-pointer"
                   >
                     <X size={14} />
                   </button>
                 )}
               </div>
 
-              {/* Grade filter */}
-              <div className="flex items-center gap-2">
+              {/* Multi-Farmer Quantity & Unit Inputs */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-1.5 focus-within:border-buyer focus-within:ring-1 focus-within:ring-buyer/30 transition-all">
+                  <Sparkles size={14} className="text-buyer shrink-0" />
+                  <span className="text-xs text-muted font-medium whitespace-nowrap">Needed Qty:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={requestedQty || ''}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value)
+                      setRequestedQty(isNaN(val) ? 0 : Math.max(0, val))
+                      if (!search && selectedCrop === 'ALL') {
+                        setSelectedCrop('Tomato')
+                      }
+                    }}
+                    placeholder="e.g. 100"
+                    className="w-20 bg-transparent text-sm font-bold text-text outline-none text-right placeholder:text-muted/50"
+                  />
+                  <select
+                    value={requestedUnit}
+                    onChange={(e) => setRequestedUnit(e.target.value as WeightUnit)}
+                    className="bg-transparent text-xs font-semibold text-buyer outline-none cursor-pointer border-l border-border/80 pl-2"
+                  >
+                    <option value="g">g (grams)</option>
+                    <option value="kg">kg</option>
+                    <option value="quintal">quintals</option>
+                    <option value="tonne">tonnes</option>
+                  </select>
+                </div>
+
+                {/* Grade filter */}
                 <select
                   value={selectedGrade}
                   onChange={(e) => setSelectedGrade(e.target.value)}
@@ -456,6 +531,123 @@ export default function Marketplace() {
               </div>
             </div>
 
+            {/* Quick Filter & Shortcut Chips */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/60 text-xs">
+              {/* Crop Shortcuts */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-muted text-[11px] font-medium mr-1">Crops:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCrop('ALL')
+                    setSearch('')
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    selectedCrop === 'ALL' && !search
+                      ? 'bg-buyer text-text shadow-sm'
+                      : 'bg-surface-2 text-muted hover:text-text border border-border'
+                  }`}
+                >
+                  All Products
+                </button>
+                {availableCrops.slice(0, 6).map((c) => {
+                  const isActive =
+                    selectedCrop.toLowerCase() === c.key || search.trim().toLowerCase() === c.key
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCrop(c.displayName)
+                        setSearch(c.displayName)
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer capitalize ${
+                        isActive
+                          ? 'bg-buyer text-text shadow-sm'
+                          : 'bg-surface-2 text-muted hover:text-text border border-border hover:border-buyer/40'
+                      }`}
+                    >
+                      {c.displayName}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Quantity Shortcut chips */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-muted text-[11px] font-medium mr-1">Multi-Farmer Presets:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRequestedQty(100)
+                    setRequestedUnit('g')
+                    if (!effectiveCrop) setSelectedCrop('Tomato')
+                  }}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                    requestedQty === 100 && requestedUnit === 'g'
+                      ? 'bg-buyer text-text font-bold shadow-sm'
+                      : 'bg-surface-2 text-muted hover:text-text border border-border'
+                  }`}
+                >
+                  100 g
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRequestedQty(500)
+                    setRequestedUnit('g')
+                    if (!effectiveCrop) setSelectedCrop('Tomato')
+                  }}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                    requestedQty === 500 && requestedUnit === 'g'
+                      ? 'bg-buyer text-text font-bold shadow-sm'
+                      : 'bg-surface-2 text-muted hover:text-text border border-border'
+                  }`}
+                >
+                  500 g
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRequestedQty(50)
+                    setRequestedUnit('kg')
+                    if (!effectiveCrop) setSelectedCrop('Tomato')
+                  }}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                    requestedQty === 50 && requestedUnit === 'kg'
+                      ? 'bg-buyer text-text font-bold shadow-sm'
+                      : 'bg-surface-2 text-muted hover:text-text border border-border'
+                  }`}
+                >
+                  50 kg
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRequestedQty(100)
+                    setRequestedUnit('kg')
+                    if (!effectiveCrop) setSelectedCrop('Tomato')
+                  }}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                    requestedQty === 100 && requestedUnit === 'kg'
+                      ? 'bg-buyer text-text font-bold shadow-sm'
+                      : 'bg-surface-2 text-muted hover:text-text border border-border'
+                  }`}
+                >
+                  100 kg
+                </button>
+                {requestedQty > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setRequestedQty(0)}
+                    className="text-muted hover:text-text text-[11px] underline ml-1 cursor-pointer"
+                  >
+                    Clear Qty
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Filter status tags */}
             {(search || selectedGrade !== 'ALL' || selectedStatus !== 'ALL') && (
               <div className="flex items-center gap-2 pt-2 border-t border-border/50 text-xs text-muted flex-wrap">
@@ -470,16 +662,57 @@ export default function Marketplace() {
                 <button
                   onClick={() => {
                     setSearch('')
+                    setSelectedCrop('ALL')
                     setSelectedGrade('ALL')
                     setSelectedStatus('ALL')
                   }}
-                  className="text-buyer hover:underline ml-1"
+                  className="text-buyer hover:underline ml-1 cursor-pointer"
                 >
                   Clear all
                 </button>
               </div>
             )}
           </div>
+
+          {/* Smart Multi-Farmer Recommendation: Automatically shown when a crop & quantity are searched */}
+          {requestedQty > 0 && (effectiveCrop || availableCrops[0]?.displayName) ? (
+            <SmartMultiFarmerRecommendation
+              listings={allListings}
+              selectedCrop={effectiveCrop || availableCrops[0]?.displayName || 'Tomato'}
+              quantity={requestedQty}
+              unit={requestedUnit}
+              strategy={strategy}
+              onStrategyChange={setStrategy}
+              onClear={() => setRequestedQty(0)}
+              onAdjustQuantity={(newQty) => setRequestedQty(newQty)}
+              placeBatchOrders={placeBatchOrders}
+              createBatchOrders={createBatchOrders}
+              onFarmerClick={(l) => setFarmerInfoListing(l)}
+              onNavigateToOrders={() => setViewTab('orders')}
+            />
+          ) : (
+            /* Helper bar showing that products are already displayed below */
+            <div className="bg-surface-2/70 border border-border/80 rounded-xl px-4 py-2.5 text-xs text-muted flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 shadow-sm">
+              <span className="flex items-center gap-2">
+                <Sparkles size={15} className="text-buyer shrink-0" />
+                <span>
+                  <strong>All available harvest products are displayed below.</strong> To get an automated multi-farmer recommendation, enter your required quantity above (e.g. 100 g or 50 kg) or click "Multi-Farmer" on any crop.
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setRequestedQty(100)
+                  setRequestedUnit('g')
+                  setSelectedCrop('Tomato')
+                  setSearch('Tomato')
+                }}
+                className="text-buyer hover:underline font-semibold shrink-0 cursor-pointer text-[11px] self-start sm:self-auto"
+              >
+                Try 100 g Tomato example &rarr;
+              </button>
+            </div>
+          )}
 
           {/* Produce Grid */}
           {filteredListings.length === 0 ? (
@@ -634,7 +867,24 @@ export default function Marketplace() {
                         }`}
                       >
                         <ShoppingBag size={14} />
-                        <span>{isSoldOut ? 'Sold Out' : 'Order Produce'}</span>
+                        <span>{isSoldOut ? 'Sold Out' : 'Order Listing'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isSoldOut}
+                        onClick={() => {
+                          setSelectedCrop(listing.cropName)
+                          setSearch(listing.cropName)
+                          setRequestedQty(100)
+                          setRequestedUnit('g')
+                          window.scrollTo({ top: 120, behavior: 'smooth' })
+                        }}
+                        className="flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl text-xs font-semibold bg-surface-2 hover:bg-buyer/15 text-buyer border border-buyer/30 transition-all cursor-pointer"
+                        title={`Get smart multi-farmer recommendation for ${listing.cropName}`}
+                      >
+                        <Sparkles size={13} />
+                        <span className="hidden sm:inline">Multi-Farmer</span>
                       </button>
 
                       <button

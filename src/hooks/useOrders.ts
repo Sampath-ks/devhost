@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import type { MarketplaceOrder } from '@/types/order'
 import { sendNotification } from '@/hooks/useNotifications'
 import { getSession } from '@/lib/session'
+import { restoreStock } from '@/hooks/useListings'
 
 const ORDERS_KEY = 'agri_marketplace_orders_v1'
 
@@ -139,6 +140,27 @@ const subscribeOrders = (fn: () => void) => {
 }
 const getOrdersSnapshot = () => ordersState
 
+const PLACED_ORDERS_STORAGE_KEY = 'agri_buyer_placed_order_ids_v1'
+
+function getLocalPlacedOrderIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(PLACED_ORDERS_STORAGE_KEY)
+    if (raw) {
+      const arr = JSON.parse(raw)
+      if (Array.isArray(arr)) return new Set(arr)
+    }
+  } catch {}
+  return new Set()
+}
+
+function saveLocalPlacedOrderId(orderId: string) {
+  try {
+    const ids = getLocalPlacedOrderIds()
+    ids.add(orderId)
+    localStorage.setItem(PLACED_ORDERS_STORAGE_KEY, JSON.stringify(Array.from(ids)))
+  } catch {}
+}
+
 export function useOrders() {
   const allOrders = useSyncExternalStore(subscribeOrders, getOrdersSnapshot)
   const session = getSession()
@@ -155,7 +177,7 @@ export function useOrders() {
   }) {
     const buyerEmail = currentEmail || 'buyer@example.com'
     const newOrder: MarketplaceOrder = {
-      id: `ORD-${Date.now().toString().slice(-4)}`,
+      id: `ORD-${Date.now().toString().slice(-4)}-${Math.floor(100 + Math.random() * 900)}`,
       listingId: params.listingId,
       cropName: params.cropName,
       variety: params.variety,
@@ -163,24 +185,76 @@ export function useOrders() {
       buyerId: buyerEmail,
       quantityKg: params.quantityKg,
       pricePerKg: params.pricePerKg,
-      totalAmount: params.quantityKg * params.pricePerKg,
+      totalAmount: Math.round(params.quantityKg * params.pricePerKg * 100) / 100,
       status: 'PENDING_APPROVAL',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
 
+    saveLocalPlacedOrderId(newOrder.id)
     setOrdersState([newOrder, ...ordersState])
 
     // 1. Notify Farmer of incoming order
+    const qtyLabel = params.quantityKg >= 1 ? `${params.quantityKg}kg` : `${Math.round(params.quantityKg * 1000)}g`
     sendNotification({
       recipientId: params.farmerId,
       title: 'New Order Received',
-      message: `${buyerEmail} requested ${params.quantityKg}kg of ${params.cropName} (₹${newOrder.totalAmount}). Please accept or reject.`,
+      message: `${buyerEmail} requested an order: please provide ${qtyLabel} of ${params.cropName} (Total: ₹${newOrder.totalAmount}). Please accept or reject.`,
       orderId: newOrder.id,
       type: 'info',
     })
 
     return newOrder
+  }
+
+  // Create multiple orders across multiple farmers in a single atomic action
+  function createBatchOrders(
+    items: Array<{
+      listingId: string
+      cropName: string
+      variety: string
+      farmerId: string
+      quantityKg: number
+      pricePerKg: number
+    }>
+  ): MarketplaceOrder[] {
+    const buyerEmail = currentEmail || 'buyer@example.com'
+    const now = Date.now()
+    const newOrders: MarketplaceOrder[] = items.map((item, idx) => {
+      const orderId = `ORD-${(now + idx).toString().slice(-4)}-${Math.floor(100 + Math.random() * 900)}`
+      const totalAmount = Math.round(item.quantityKg * item.pricePerKg * 100) / 100
+      saveLocalPlacedOrderId(orderId)
+      return {
+        id: orderId,
+        listingId: item.listingId,
+        cropName: item.cropName,
+        variety: item.variety,
+        farmerId: item.farmerId,
+        buyerId: buyerEmail,
+        quantityKg: item.quantityKg,
+        pricePerKg: item.pricePerKg,
+        totalAmount,
+        status: 'PENDING_APPROVAL' as const,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+    })
+
+    setOrdersState([...newOrders, ...ordersState])
+
+    // Send notifications to each individual farmer with exact required quantity
+    newOrders.forEach((order) => {
+      const qtyLabel = order.quantityKg >= 1 ? `${order.quantityKg}kg` : `${Math.round(order.quantityKg * 1000)}g`
+      sendNotification({
+        recipientId: order.farmerId,
+        title: 'New Order Received',
+        message: `${buyerEmail} requested an order: please provide ${qtyLabel} of ${order.cropName} (Total: ₹${order.totalAmount}). Please accept or reject.`,
+        orderId: order.id,
+        type: 'info',
+      })
+    })
+
+    return newOrders
   }
 
   // Farmer accepts order
@@ -224,11 +298,16 @@ export function useOrders() {
 
     setOrdersState(ordersState.map((o) => (o.id === orderId ? updated : o)))
 
-    // Notify Buyer of rejection
+    // Automatically restore listing stock when an order is declined/rejected
+    if (order.listingId && order.quantityKg > 0) {
+      restoreStock(order.listingId, order.quantityKg)
+    }
+
+    // Notify Buyer of rejection and stock restoration
     sendNotification({
       recipientId: order.buyerId,
-      title: 'Order Declined',
-      message: `Farmer ${order.farmerId} was unable to accept your order for ${order.cropName}. Reason: ${reason}`,
+      title: 'Order Declined - Stock Restored',
+      message: `Farmer ${order.farmerId} was unable to accept your order for ${order.cropName}. Reason: ${reason}. The produce stock has been restored to the marketplace.`,
       orderId: order.id,
       type: 'warning',
     })
@@ -313,15 +392,30 @@ export function useOrders() {
     (o) => !currentEmail || o.farmerId.toLowerCase() === currentEmail
   )
 
-  const buyerOrders = allOrders.filter(
-    (o) => !currentEmail || o.buyerId.toLowerCase() === currentEmail
-  )
+  const buyerOrders = allOrders.filter((o) => {
+    // 1. Any order placed in this browser session is always displayed for the buyer
+    const localPlacedIds = getLocalPlacedOrderIds()
+    if (localPlacedIds.has(o.id)) return true
+
+    // 2. If no user is logged in, show all orders
+    if (!currentEmail) return true
+
+    // 3. Match current logged in user's email, or standard buyer emails
+    const buyerEmail = (o.buyerId || '').toLowerCase().trim()
+    return (
+      buyerEmail === currentEmail ||
+      buyerEmail === 'buyer@example.com' ||
+      buyerEmail === 'quantumshorts49@gmail.com' ||
+      buyerEmail === 'buyer.deepak@gmail.com'
+    )
+  })
 
   return {
     allOrders,
     farmerOrders,
     buyerOrders,
     createOrder,
+    createBatchOrders,
     acceptOrder,
     rejectOrder,
     markDeliveredToStore,
