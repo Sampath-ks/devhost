@@ -49,8 +49,12 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute allow={['farmer', 'user']} />}>
         <Route element={<DashboardShell />}>
           <Route path="/store" element={<StoreInventory />} />
-          <Route path="/auction" element={<AuctionPage />} />
         </Route>
+      </Route>
+
+      {/* Direct open access without login (same behavior as /admin) */}
+      <Route element={<DashboardShell />}>
+        <Route path="/auction" element={<AuctionPage />} />
       </Route>
     </Routes>
   )

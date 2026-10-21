@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Search,
   ShoppingBag,
@@ -6,30 +7,31 @@ import {
   CalendarDays,
   User,
   CheckCircle2,
-  AlertCircle,
   X,
-  ArrowUpDown,
   Sprout,
-  TrendingDown,
-  TrendingUp,
   Minus,
   Plus,
-  Truck,
   Store,
   Clock,
   PackageCheck,
   Sparkles,
+  ShieldCheck,
+  ChevronRight,
+  LogOut,
+  ListChecks,
+  PlusCircle,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { clearSession } from '@/lib/session'
+import { useAppStore } from '@/lib/store'
 import { useAllListings, type OrderResult } from '@/hooks/useListings'
 import { useOrders } from '@/hooks/useOrders'
-import type { ProduceListing, QualityGrade } from '@/lib/produceTypes'
+import type { ProduceListing } from '@/lib/produceTypes'
 import { getPriceSuggestion } from '@/lib/priceService'
 import { MARKETS } from '@/data/mandiPrices'
-import OrderStepper from '@/components/ui/Stepper'
+import OrderTrackingCard from '@/components/orders/OrderTrackingCard'
 import SmartMultiFarmerRecommendation from '@/pages/buyer/SmartMultiFarmerRecommendation'
 import {
-  getFarmerDisplayName,
   type WeightUnit,
   type RecommendationStrategy,
 } from '@/lib/recommendationUtils'
@@ -48,22 +50,11 @@ const CROP_IMAGES: Record<string, string> = {
   tomato: '/assets/images/crops/tomato.png',
 }
 
-const statusStyles: Record<string, string> = {
-  Active: 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30',
-  Supplied: 'bg-sky-950/60 text-sky-400 border border-sky-500/30',
-  'Sold Out': 'bg-amber-950/60 text-amber-400 border border-amber-500/30',
-  Closed: 'bg-gray-800 text-gray-400 border border-gray-700',
-}
-
-const gradeStyles: Record<QualityGrade, { badge: string; text: string }> = {
-  A: { badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', text: 'Grade A (Premium)' },
-  B: { badge: 'bg-blue-500/15 text-blue-300 border-blue-500/30', text: 'Grade B (Standard)' },
-  C: { badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30', text: 'Grade C (Commercial)' },
-}
-
 type BuyerTab = 'marketplace' | 'orders'
 
 export default function Marketplace() {
+  const navigate = useNavigate()
+  const { currentFarmer } = useAppStore()
   const { allListings, placeOrder, placeBatchOrders } = useAllListings()
   const { buyerOrders, createOrder, createBatchOrders } = useOrders()
 
@@ -82,8 +73,10 @@ export default function Marketplace() {
   const [orderQty, setOrderQty] = useState<number>(10)
   const [orderFeedback, setOrderFeedback] = useState<OrderResult | null>(null)
 
-  // Farmer info modal state
-  const [farmerInfoListing, setFarmerInfoListing] = useState<ProduceListing | null>(null)
+  const handleLogout = () => {
+    clearSession()
+    navigate('/login', { replace: true })
+  }
 
   // Compute stats across all farmers' listings
   const stats = useMemo(() => {
@@ -203,29 +196,71 @@ export default function Marketplace() {
   ]
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-4">
+      {/* Top action row with aligned Logout button */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex items-center gap-2 rounded-xl border border-[#214734] bg-[#0c1a14]/85 backdrop-blur-md px-3.5 py-1.5 text-xs text-slate-200 transition-all hover:bg-[#163526] hover:text-white cursor-pointer shadow-sm hover:border-emerald-500/40"
+        >
+          <LogOut className="h-3.5 w-3.5 text-slate-300" />
+          <span>Log out</span>
+        </button>
+      </div>
+
       {/* Main Layout with Side Dashboard */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
         {/* ─── SIDE DASHBOARD NAVIGATION ─── */}
-        <aside className="w-full lg:w-72 shrink-0 bg-surface border border-border rounded-3xl p-5 space-y-6 shadow-sm sticky top-24">
-          {/* Buyer Portal Brand Card */}
-          <div className="border-b border-border/60 pb-5">
-            <div className="flex items-center gap-1.5 text-buyer text-[11px] font-semibold tracking-wide uppercase mb-1">
-              <ShoppingBag size={14} />
-              <span>Buyer Procurement</span>
+        <aside className="w-full lg:w-80 shrink-0 bg-[#0c1a14]/90 backdrop-blur-md border border-[#1b3b2b]/80 rounded-3xl p-5 space-y-5 shadow-2xl relative overflow-hidden">
+          {/* Subtle bottom leaf contour lines */}
+          <div className="absolute bottom-0 left-0 right-0 pointer-events-none opacity-15 overflow-hidden h-16">
+            <svg viewBox="0 0 300 60" className="w-full h-full" fill="none">
+              <path d="M0 45 Q 75 25, 150 45 T 300 40" stroke="#38a169" strokeWidth="1.5" />
+              <path d="M0 55 Q 100 35, 200 55 T 300 50" stroke="#48bb78" strokeWidth="1" />
+            </svg>
+          </div>
+
+          {/* User / Farmer Profile Card */}
+          <div className="border-b border-[#1b3b2b]/70 pb-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-bold tracking-wider uppercase mb-1">
+                  <ShieldCheck size={14} className="text-emerald-400" />
+                  <span>Verified Grower</span>
+                </div>
+                <h2 className="font-serif text-xl font-bold text-white leading-snug">
+                  {currentFarmer?.name || 'Ramesh Patil'}
+                </h2>
+                <div className="mt-2 text-xs text-slate-300 space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin size={13} className="text-emerald-400 shrink-0" />
+                    <span>
+                      {currentFarmer?.village || 'Ozar'}, {currentFarmer?.district || 'Nashik'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Store size={13} className="text-emerald-400 shrink-0" />
+                    <span>{currentFarmer?.distanceKm || '8.4'} km to Central Store</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Circular Avatar */}
+              <div className="relative shrink-0 ml-3">
+                <img
+                  src="/assets/images/portraits/farmer_avatar.jpg"
+                  alt={currentFarmer?.name || 'User'}
+                  className="w-14 h-14 rounded-full object-cover border-2 border-emerald-500/60 shadow-md"
+                />
+              </div>
             </div>
-            <h2 className="font-serif text-xl font-bold text-text leading-snug">
-              Fresh Produce Market
-            </h2>
-            <p className="text-xs text-muted mt-1 leading-relaxed">
-              Direct farmgate sourcing from verified cultivators with Central Store fulfillment.
-            </p>
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1.5">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted px-3 pb-1">
-              Portal Navigation
+          <nav className="space-y-2">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f9378] px-1">
+              Dashboard Navigation
             </div>
             {NAV_ITEMS.map((item) => {
               const isActive = viewTab === item.id
@@ -234,62 +269,103 @@ export default function Marketplace() {
                   key={item.id}
                   type="button"
                   onClick={() => setViewTab(item.id)}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-medium transition-all cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-buyer text-text font-bold shadow-md shadow-buyer/20'
-                      : 'text-muted hover:text-text hover:bg-surface-2'
+                      ? 'bg-[#2f6f45] text-white shadow-lg shadow-emerald-950/40 border border-emerald-500/40'
+                      : 'text-slate-300 hover:text-white hover:bg-[#152e22]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={isActive ? 'text-text' : 'text-buyer'}>{item.icon}</span>
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge !== undefined && (
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    <div
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                         isActive
-                          ? 'bg-text text-buyer'
-                          : 'bg-surface-2 text-muted border border-border'
+                          ? 'bg-white/15 text-white'
+                          : 'bg-[#14281f] text-emerald-400'
                       }`}
                     >
-                      {item.badge}
-                    </span>
-                  )}
+                      {item.icon}
+                    </div>
+                    <span>{item.label}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {item.badge !== undefined && (
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          isActive
+                            ? 'bg-white/20 text-white'
+                            : 'bg-[#14281f] text-emerald-400 border border-[#214734]'
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                    <ChevronRight
+                      size={15}
+                      className={isActive ? 'text-white' : 'text-slate-500'}
+                    />
+                  </div>
                 </button>
               )
             })}
           </nav>
 
           {/* Sourcing Summary Snapshot */}
-          <div className="border-t border-border/60 pt-5 space-y-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted px-3">
+          <div className="border-t border-[#1b3b2b]/70 pt-4 space-y-3">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f9378] px-1">
               Market Snapshot
             </div>
-            <div className="bg-surface-2/60 border border-border rounded-2xl p-3.5 space-y-2 text-xs">
+            <div className="bg-[#102319]/80 border border-[#214734]/70 rounded-2xl p-3.5 space-y-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-muted">Total Available:</span>
-                <span className="font-bold text-text">{stats.totalKg.toLocaleString()} kg</span>
+                <span className="text-slate-400">Total Available:</span>
+                <span className="font-bold text-white">{stats.totalKg.toLocaleString()} kg</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted">Active Farmers:</span>
-                <span className="font-semibold text-text">{stats.uniqueFarmers}</span>
+                <span className="text-slate-400">Active Farmers:</span>
+                <span className="font-semibold text-white">{stats.uniqueFarmers}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted">Starting Rate:</span>
-                <span className="font-bold text-buyer">₹{stats.lowestPrice || 0}/kg</span>
+                <span className="text-slate-400">Starting Rate:</span>
+                <span className="font-bold text-emerald-400">₹{stats.lowestPrice || 0}/kg</span>
               </div>
-              <div className="flex items-center justify-between border-t border-border/50 pt-1.5">
-                <span className="text-muted">Active Listings:</span>
-                <span className="font-semibold text-text">{stats.activeCount} batches</span>
+              <div className="flex items-center justify-between border-t border-[#1b3b2b]/80 pt-1.5">
+                <span className="text-slate-400">Active Listings:</span>
+                <span className="font-semibold text-white">{stats.activeCount} batches</span>
               </div>
             </div>
+          </div>
+
+          {/* Quick Actions Panel */}
+          <div className="border-t border-[#1b3b2b]/70 pt-4 space-y-2">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#5f9378] px-1 pb-1">
+              Quick Actions
+            </div>
+            <Link
+              to="/farmer/add"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-[#388254]/85 hover:bg-[#388254] text-white text-xs font-semibold shadow-md transition-all border border-emerald-400/30"
+            >
+              <div className="flex items-center gap-2.5">
+                <PlusCircle size={15} className="text-emerald-200" />
+                <span>Add Harvest Listing</span>
+              </div>
+              <ChevronRight size={15} className="text-emerald-200" />
+            </Link>
+            <Link
+              to="/farmer/listings"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-[#12241b]/80 hover:bg-[#1a3829] text-slate-300 hover:text-white text-xs font-medium transition-colors border border-[#214734]/50"
+            >
+              <div className="flex items-center gap-2.5">
+                <ListChecks size={15} className="text-emerald-400" />
+                <span>Manage All Listings</span>
+              </div>
+              <ChevronRight size={15} className="text-slate-500" />
+            </Link>
           </div>
         </aside>
 
         {/* ─── MAIN CONTENT VIEW CANVAS ─── */}
         <main className="flex-1 w-full min-w-0">
           <AnimatePresence mode="wait">
-            {/* VIEW 1: UNIFIED SINGLE PRODUCE MARKETPLACE (BROWSING + AUTOMATIC SPLIT RECOMMENDATION) */}
+            {/* VIEW 1: UNIFIED SINGLE PRODUCE MARKETPLACE */}
             {viewTab === 'marketplace' && (
               <motion.div
                 key="marketplace"
@@ -297,14 +373,14 @@ export default function Marketplace() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-6"
+                className="space-y-4"
               >
                 {/* Search, Quantity & Filters Bar */}
-                <div className="bg-surface border border-border rounded-3xl p-5 space-y-4 shadow-sm">
-                  <div className="flex flex-col lg:flex-row gap-3">
+                <div className="bg-[#0c1a14]/90 backdrop-blur-md border border-[#1b3b2b]/80 rounded-3xl p-4 sm:p-5 space-y-3.5 shadow-2xl">
+                  <div className="flex flex-col lg:flex-row gap-2.5">
                     {/* Search Input */}
                     <div className="relative flex-1">
-                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" size={16} />
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400" size={16} />
                       <input
                         type="text"
                         value={search}
@@ -318,8 +394,8 @@ export default function Marketplace() {
                             setSelectedCrop('ALL')
                           }
                         }}
-                        placeholder="Search by crop (e.g. Tomato, Potato), variety, or farmer..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-surface-2 border border-border rounded-2xl text-sm text-text placeholder:text-muted/60 outline-none focus:border-buyer focus:ring-1 focus:ring-buyer/30 transition-all"
+                        placeholder="Search by crop..."
+                        className="w-full pl-10 pr-8 py-2 bg-[#13281e]/90 border border-[#214734] rounded-2xl text-xs sm:text-sm text-white placeholder:text-slate-400 outline-none focus:border-emerald-500 transition-all shadow-inner"
                       />
                       {search && (
                         <button
@@ -327,7 +403,7 @@ export default function Marketplace() {
                             setSearch('')
                             setSelectedCrop('ALL')
                           }}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text cursor-pointer"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
                         >
                           <X size={14} />
                         </button>
@@ -335,9 +411,9 @@ export default function Marketplace() {
                     </div>
 
                     {/* Quantity & Unit input for auto-split recommendation */}
-                    <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-2xl px-3 py-1.5 focus-within:border-buyer focus-within:ring-1 focus-within:ring-buyer/30 transition-all">
-                      <Sparkles size={14} className="text-buyer shrink-0" />
-                      <span className="text-xs text-muted font-medium whitespace-nowrap">Needed Qty:</span>
+                    <div className="flex items-center gap-1.5 bg-[#13281e]/90 border border-[#214734] rounded-2xl px-3 py-1.5 transition-all">
+                      <Sparkles size={14} className="text-amber-400 shrink-0" />
+                      <span className="text-xs text-slate-300 font-semibold whitespace-nowrap">Needed Qty:</span>
                       <input
                         type="number"
                         min="0"
@@ -351,17 +427,17 @@ export default function Marketplace() {
                           }
                         }}
                         placeholder="e.g. 100"
-                        className="w-20 bg-transparent text-sm font-bold text-text outline-none text-right placeholder:text-muted/50"
+                        className="w-20 bg-transparent text-sm font-bold text-white outline-none text-right placeholder:text-slate-400"
                       />
                       <select
                         value={requestedUnit}
                         onChange={(e) => setRequestedUnit(e.target.value as WeightUnit)}
-                        className="bg-transparent text-xs font-semibold text-buyer outline-none cursor-pointer border-l border-border/80 pl-2"
+                        className="bg-transparent text-xs font-semibold text-emerald-400 outline-none cursor-pointer border-l border-[#214734] pl-2"
                       >
-                        <option value="g">g (grams)</option>
-                        <option value="kg">kg</option>
-                        <option value="quintal">quintals</option>
-                        <option value="tonne">tonnes</option>
+                        <option value="g" className="bg-[#0c1a14] text-white">g</option>
+                        <option value="kg" className="bg-[#0c1a14] text-white">kg</option>
+                        <option value="quintal" className="bg-[#0c1a14] text-white">quintal</option>
+                        <option value="tonne" className="bg-[#0c1a14] text-white">tonne</option>
                       </select>
                     </div>
 
@@ -370,56 +446,53 @@ export default function Marketplace() {
                       <select
                         value={selectedGrade}
                         onChange={(e) => setSelectedGrade(e.target.value)}
-                        className="bg-surface-2 border border-border rounded-xl px-3 py-2 text-xs sm:text-sm text-text outline-none focus:border-buyer cursor-pointer"
+                        className="bg-[#13281e]/90 border border-[#214734] text-slate-200 text-xs font-semibold rounded-2xl px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
                       >
-                        <option value="ALL">All Grades</option>
-                        <option value="A">Grade A</option>
-                        <option value="B">Grade B</option>
-                        <option value="C">Grade C</option>
+                        <option value="ALL" className="bg-[#0c1a14] text-white">All Grades</option>
+                        <option value="A" className="bg-[#0c1a14] text-white">Grade A</option>
+                        <option value="B" className="bg-[#0c1a14] text-white">Grade B</option>
+                        <option value="C" className="bg-[#0c1a14] text-white">Grade C</option>
                       </select>
 
                       <select
                         value={selectedStatus}
                         onChange={(e) => setSelectedStatus(e.target.value)}
-                        className="bg-surface-2 border border-border rounded-xl px-3 py-2 text-xs sm:text-sm text-text outline-none focus:border-buyer cursor-pointer"
+                        className="bg-[#13281e]/90 border border-[#214734] text-slate-200 text-xs font-semibold rounded-2xl px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
                       >
-                        <option value="ALL">All Statuses</option>
-                        <option value="Active">Active Only</option>
-                        <option value="Supplied">Supplied</option>
-                        <option value="Sold Out">Sold Out</option>
+                        <option value="ALL" className="bg-[#0c1a14] text-white">All Statuses</option>
+                        <option value="Active" className="bg-[#0c1a14] text-white">Active Only</option>
+                        <option value="Supplied" className="bg-[#0c1a14] text-white">Supplied</option>
+                        <option value="Sold Out" className="bg-[#0c1a14] text-white">Sold Out</option>
                       </select>
 
-                      <div className="flex items-center gap-1.5 bg-surface-2 border border-border rounded-xl px-3 py-2 text-xs sm:text-sm text-muted">
-                        <ArrowUpDown size={14} />
-                        <select
-                          value={sortBy}
-                          onChange={(e) => setSortBy(e.target.value as any)}
-                          className="bg-transparent text-text outline-none cursor-pointer"
-                        >
-                          <option value="recent">Newest Harvest</option>
-                          <option value="price_asc">Price: Low to High</option>
-                          <option value="price_desc">Price: High to Low</option>
-                          <option value="qty_desc">Quantity: High to Low</option>
-                        </select>
-                      </div>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as any)}
+                        className="bg-[#13281e]/90 border border-[#214734] text-slate-200 text-xs font-semibold rounded-2xl px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
+                      >
+                        <option value="recent" className="bg-[#0c1a14] text-white">Newest Harvest</option>
+                        <option value="price_asc" className="bg-[#0c1a14] text-white">Price: Low to High</option>
+                        <option value="price_desc" className="bg-[#0c1a14] text-white">Price: High to Low</option>
+                        <option value="qty_desc" className="bg-[#0c1a14] text-white">Quantity: High to Low</option>
+                      </select>
                     </div>
                   </div>
 
                   {/* Crop Filter Chips & Presets */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/50 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#1b3b2b]/70 text-xs">
                     {/* Crop chips */}
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-muted text-[11px] font-medium mr-1">Crops:</span>
+                      <span className="text-slate-400 text-xs font-semibold mr-1">Crops:</span>
                       <button
                         type="button"
                         onClick={() => {
                           setSelectedCrop('ALL')
                           setSearch('')
                         }}
-                        className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                           selectedCrop === 'ALL' && !search
-                            ? 'bg-buyer text-text shadow-sm'
-                            : 'bg-surface-2 text-muted hover:text-text border border-border'
+                            ? 'bg-[#2f6f45] text-white shadow-sm'
+                            : 'bg-[#13281e]/80 text-slate-300 hover:text-white border border-[#214734]'
                         }`}
                       >
                         All Products
@@ -435,10 +508,10 @@ export default function Marketplace() {
                               setSelectedCrop(c.displayName)
                               setSearch(c.displayName)
                             }}
-                            className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer capitalize ${
+                            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer capitalize ${
                               isActive
-                                ? 'bg-buyer text-text shadow-sm'
-                                : 'bg-surface-2 text-muted hover:text-text border border-border hover:border-buyer/40'
+                                ? 'bg-[#2f6f45] text-white shadow-sm'
+                                : 'bg-[#13281e]/80 text-slate-300 hover:text-white border border-[#214734] hover:border-emerald-500/40'
                             }`}
                           >
                             {c.displayName}
@@ -449,7 +522,7 @@ export default function Marketplace() {
 
                     {/* Quantity shortcut presets */}
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-muted text-[11px] font-medium mr-1">Split Presets:</span>
+                      <span className="text-slate-400 text-xs font-semibold mr-1">Split Presets:</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -457,10 +530,10 @@ export default function Marketplace() {
                           setRequestedUnit('g')
                           if (!effectiveCrop) setSelectedCrop('Tomato')
                         }}
-                        className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                           requestedQty === 100 && requestedUnit === 'g'
-                            ? 'bg-buyer text-text font-bold shadow-sm'
-                            : 'bg-surface-2 text-muted hover:text-text border border-border'
+                            ? 'bg-[#2f6f45] text-white font-bold shadow-sm'
+                            : 'bg-[#13281e]/80 text-slate-300 hover:text-white border border-[#214734]'
                         }`}
                       >
                         100 g
@@ -472,10 +545,10 @@ export default function Marketplace() {
                           setRequestedUnit('g')
                           if (!effectiveCrop) setSelectedCrop('Tomato')
                         }}
-                        className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                           requestedQty === 500 && requestedUnit === 'g'
-                            ? 'bg-buyer text-text font-bold shadow-sm'
-                            : 'bg-surface-2 text-muted hover:text-text border border-border'
+                            ? 'bg-[#2f6f45] text-white font-bold shadow-sm'
+                            : 'bg-[#13281e]/80 text-slate-300 hover:text-white border border-[#214734]'
                         }`}
                       >
                         500 g
@@ -487,10 +560,10 @@ export default function Marketplace() {
                           setRequestedUnit('kg')
                           if (!effectiveCrop) setSelectedCrop('Tomato')
                         }}
-                        className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                           requestedQty === 50 && requestedUnit === 'kg'
-                            ? 'bg-buyer text-text font-bold shadow-sm'
-                            : 'bg-surface-2 text-muted hover:text-text border border-border'
+                            ? 'bg-[#2f6f45] text-white font-bold shadow-sm'
+                            : 'bg-[#13281e]/80 text-slate-300 hover:text-white border border-[#214734]'
                         }`}
                       >
                         50 kg
@@ -499,7 +572,7 @@ export default function Marketplace() {
                         <button
                           type="button"
                           onClick={() => setRequestedQty(0)}
-                          className="text-muted hover:text-text text-[11px] underline ml-1 cursor-pointer"
+                          className="text-slate-400 hover:text-white text-[11px] underline ml-1 cursor-pointer"
                         >
                           Clear
                         </button>
@@ -525,10 +598,10 @@ export default function Marketplace() {
                     onNavigateToOrders={() => setViewTab('orders')}
                   />
                 ) : (
-                  /* Subtle informative bar that crops are displayed below */
-                  <div className="bg-surface-2/60 border border-border rounded-2xl px-4 py-2.5 text-xs text-muted flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 shadow-sm">
+                  /* Subtle informative bar matching design */
+                  <div className="bg-[#0c1a14]/85 backdrop-blur-md border border-[#1b3b2b]/80 rounded-2xl px-4 py-2.5 text-xs text-slate-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 shadow-lg">
                     <span className="flex items-center gap-2">
-                      <Sparkles size={15} className="text-buyer shrink-0" />
+                      <Sprout size={16} className="text-emerald-400 shrink-0" />
                       <span>
                         <strong>All harvest produce is displayed below.</strong> Enter your needed quantity above (e.g. 100 g or 50 kg) to automatically combine stock across multiple farmers!
                       </span>
@@ -541,7 +614,7 @@ export default function Marketplace() {
                         setSelectedCrop('Tomato')
                         setSearch('Tomato')
                       }}
-                      className="text-buyer hover:underline font-semibold shrink-0 cursor-pointer text-[11px] self-start sm:self-auto"
+                      className="text-amber-300 hover:underline font-semibold shrink-0 cursor-pointer text-xs self-start sm:self-auto"
                     >
                       Try 100 g Tomato example &rarr;
                     </button>
@@ -550,21 +623,22 @@ export default function Marketplace() {
 
                 {/* Section Title */}
                 <div className="flex items-center justify-between pt-1">
-                  <h3 className="font-serif text-xl font-bold text-text flex items-center gap-2">
-                    <Sprout size={18} className="text-buyer" />
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+                    <Sprout size={19} className="text-emerald-400" />
                     Available Harvest Produce ({filteredListings.length})
                   </h3>
-                  <span className="text-xs text-muted">
-                    {requestedQty > 0 ? `Filtered by ${effectiveCrop}` : 'Direct from local farms'}
-                  </span>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                    <MapPin size={14} className="text-emerald-400" />
+                    <span>Direct from local farms</span>
+                  </div>
                 </div>
 
-                {/* Listings Grid */}
+                {/* Listings Grid (4 Columns) */}
                 {filteredListings.length === 0 ? (
-                  <div className="bg-surface border border-dashed border-border rounded-3xl p-12 text-center space-y-3">
-                    <Sprout className="mx-auto text-muted" size={36} />
-                    <h3 className="text-lg font-medium text-text">No produce matches your search</h3>
-                    <p className="text-xs text-muted max-w-sm mx-auto">
+                  <div className="bg-[#0c1a14]/90 backdrop-blur-md border border-[#1b3b2b]/80 rounded-3xl p-12 text-center space-y-3 shadow-2xl">
+                    <Sprout className="mx-auto text-slate-500" size={36} />
+                    <h3 className="text-lg font-medium text-white">No produce matches your search</h3>
+                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
                       Try adjusting your search filters or clearing search keywords.
                     </p>
                     <button
@@ -574,13 +648,13 @@ export default function Marketplace() {
                         setSelectedStatus('ALL')
                         setSelectedCrop('ALL')
                       }}
-                      className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-buyer text-text text-xs font-semibold hover:opacity-90 cursor-pointer"
+                      className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2f6f45] text-white text-xs font-semibold hover:opacity-90 cursor-pointer"
                     >
                       Reset Filters
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {filteredListings.map((listing) => {
                       const cropKey = listing.cropName.trim().toLowerCase()
                       const imageSrc = CROP_IMAGES[cropKey]
@@ -596,135 +670,133 @@ export default function Marketplace() {
                       return (
                         <div
                           key={listing.id}
-                          className="group bg-surface border border-border hover:border-buyer/50 rounded-3xl p-5 shadow-sm transition-all duration-300 flex flex-col justify-between"
+                          className="group bg-[#0c1a14]/90 backdrop-blur-md border border-[#1b3b2b]/80 hover:border-emerald-500/50 rounded-3xl p-3.5 shadow-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden"
                         >
                           <div>
-                            {/* Top Bar: Grade & Status */}
-                            <div className="flex items-center justify-between gap-2 mb-3">
-                              <span
-                                className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${
-                                  gradeStyles[listing.qualityGrade]?.badge ||
-                                  'bg-surface-2 text-text border-border'
-                                }`}
-                              >
-                                {gradeStyles[listing.qualityGrade]?.text || `Grade ${listing.qualityGrade}`}
-                              </span>
-                              <span
-                                className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
-                                  statusStyles[listing.status] || 'bg-surface-2 text-muted'
-                                }`}
-                              >
-                                {listing.status}
-                              </span>
-                            </div>
+                            {/* Card Image Banner */}
+                            <div className="relative h-28 sm:h-32 rounded-2xl overflow-hidden mb-3 bg-[#11241b] border border-[#214734]/60">
+                              <div
+                                className="absolute inset-0 bg-cover bg-center opacity-40"
+                                style={{ backgroundImage: `url('/assets/images/portals/buyer.jpg')` }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-[#0c1a14] via-transparent to-black/30" />
 
-                            {/* Crop Header */}
-                            <div className="flex items-start gap-3 mb-3">
-                              {imageSrc ? (
-                                <div className="w-14 h-14 rounded-2xl bg-surface-2 p-1 border border-border shrink-0 flex items-center justify-center overflow-hidden">
+                              {imageSrc && (
+                                <div className="absolute inset-0 flex items-center justify-center p-2">
                                   <img
                                     src={imageSrc}
                                     alt={listing.cropName}
-                                    className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                                    className="h-20 w-24 object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300"
                                   />
                                 </div>
-                              ) : (
-                                <div className="w-14 h-14 rounded-2xl bg-surface-2 border border-border shrink-0 flex items-center justify-center text-buyer">
-                                  <Sprout size={24} />
-                                </div>
                               )}
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-serif text-xl font-bold text-text truncate">
+
+                              {/* Badges Overlay */}
+                              <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none z-10">
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#13281e]/90 text-emerald-300 border border-emerald-500/40 shadow-sm backdrop-blur-sm">
+                                  Grade {listing.qualityGrade} ({listing.qualityGrade === 'A' ? 'Premium' : listing.qualityGrade === 'B' ? 'Standard' : 'Commercial'})
+                                </span>
+                                <span
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm backdrop-blur-sm ${
+                                    isSoldOut
+                                      ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
+                                      : 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
+                                  }`}
+                                >
+                                  {listing.status || 'Active'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Crop Info */}
+                            <div className="space-y-1 mb-2.5">
+                              <div className="flex items-center gap-1.5">
+                                <Sprout size={14} className="text-emerald-400 shrink-0" />
+                                <h3 className="font-serif text-base font-bold text-white truncate">
                                   {listing.cropName}
                                 </h3>
-                                <p className="text-xs text-muted truncate">Variety: {listing.variety}</p>
-                                <button
-                                  type="button"
-                                  onClick={() => setFarmerInfoListing(listing)}
-                                  className="mt-1 flex items-center gap-1 text-[11px] text-buyer/90 hover:text-buyer hover:underline truncate max-w-full cursor-pointer"
+                              </div>
+                              <p className="text-xs text-slate-400 truncate">
+                                Variety: {listing.variety}
+                              </p>
+                              <div className="flex items-center gap-1 text-[11px] text-slate-400 truncate">
+                                <User size={11} className="text-emerald-400 shrink-0" />
+                                <span className="truncate">Farmer: {listing.farmerId}</span>
+                              </div>
+                            </div>
+
+                            {/* Available Stock & Asking Price */}
+                            <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-[#13281e]/90 border border-[#214734]/70 mb-2">
+                              <div>
+                                <span className="block text-[10px] text-slate-400">Available Stock</span>
+                                <strong className="text-sm font-bold text-white">
+                                  {listing.quantityKg} kg
+                                </strong>
+                              </div>
+                              <div className="text-right">
+                                <span className="block text-[10px] text-slate-400">Asking Price</span>
+                                <strong className="text-sm font-bold text-emerald-400">
+                                  ₹{listing.askingPrice} <span className="text-xs font-normal text-slate-400">/kg</span>
+                                </strong>
+                              </div>
+                            </div>
+
+                            {/* Mandi Benchmark Price Comparison */}
+                            {priceBenchmark ? (
+                              <div className="p-1.5 rounded-xl bg-[#102319] border border-[#214734]/50 mb-2 text-[10px] text-slate-300 flex items-center justify-between">
+                                <span className="truncate">
+                                  Mandi avg ({MARKETS[0] || 'Mangaluru'}): ₹{priceBenchmark.benchmark}/kg
+                                </span>
+                                <span
+                                  className={`font-semibold shrink-0 ml-1 ${
+                                    priceBenchmark.comparison === 'above'
+                                      ? 'text-amber-300'
+                                      : priceBenchmark.comparison === 'below'
+                                      ? 'text-emerald-300'
+                                      : 'text-emerald-400'
+                                  }`}
                                 >
-                                  <User size={11} className="shrink-0" />
-                                  <span className="truncate">Farmer: {listing.farmerId}</span>
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Quantity and Price grid */}
-                            <div className="bg-surface-2/60 border border-border rounded-2xl p-3.5 grid grid-cols-2 gap-2 my-3">
-                              <div>
-                                <span className="text-[11px] text-muted block">Available Stock</span>
-                                <span className="text-base font-semibold text-text">
-                                  {listing.quantityKg.toLocaleString()}{' '}
-                                  <span className="text-xs font-normal text-muted">kg</span>
+                                  {priceBenchmark.comparison === 'above'
+                                    ? '↗ Premium'
+                                    : priceBenchmark.comparison === 'below'
+                                    ? 'Best Deal'
+                                    : 'Fair Rate'}
                                 </span>
                               </div>
-                              <div>
-                                <span className="text-[11px] text-muted block">Asking Price</span>
-                                <span className="text-base font-semibold text-buyer">
-                                  ₹{listing.askingPrice} <span className="text-xs font-normal text-muted">/kg</span>
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Market comparison badge */}
-                            {priceBenchmark && (
-                              <div className="mb-3 px-3 py-1.5 rounded-xl bg-surface-2 border border-border/80 flex items-center justify-between text-xs">
-                                <span className="text-muted text-[11px]">Mandi avg ({MARKETS[0]}):</span>
-                                <div className="flex items-center gap-1 font-medium">
-                                  <span>₹{priceBenchmark.benchmark}/kg</span>
-                                  {priceBenchmark.comparison === 'below' && (
-                                    <span className="text-emerald-400 flex items-center text-[11px]">
-                                      <TrendingDown size={12} className="mr-0.5" /> Best Deal
-                                    </span>
-                                  )}
-                                  {priceBenchmark.comparison === 'within' && (
-                                    <span className="text-sky-300 text-[11px]">Fair Rate</span>
-                                  )}
-                                  {priceBenchmark.comparison === 'above' && (
-                                    <span className="text-amber-300 flex items-center text-[11px]">
-                                      <TrendingUp size={12} className="mr-0.5" /> Premium
-                                    </span>
-                                  )}
-                                </div>
+                            ) : (
+                              <div className="p-1.5 rounded-xl bg-[#102319]/50 border border-[#214734]/30 mb-2 text-[10px] text-slate-400 flex items-center justify-between">
+                                <span className="truncate">Direct Farm Gate Rate</span>
+                                <span className="text-emerald-400 font-medium text-[10px]">Verified</span>
                               </div>
                             )}
 
-                            {/* Location & Harvest Metadata */}
-                            <div className="space-y-1 text-xs text-muted mb-4">
-                              <div className="flex items-center gap-1.5 truncate">
-                                <MapPin size={13} className="shrink-0 text-muted" />
-                                <span className="truncate">{listing.location}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <CalendarDays size={13} className="shrink-0 text-muted" />
-                                <span>Harvested {listing.harvestDate}</span>
-                              </div>
+                            {/* Location & Harvest Date */}
+                            <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1b3b2b]/60">
+                              <span className="flex items-center gap-1 truncate">
+                                <MapPin size={10} className="text-emerald-400 shrink-0" />
+                                <span className="truncate">{listing.location || 'Nashik'}</span>
+                              </span>
+                              <span className="flex items-center gap-1 shrink-0">
+                                <CalendarDays size={10} className="text-emerald-400" />
+                                <span>{new Date(listing.createdAt).toISOString().split('T')[0]}</span>
+                              </span>
                             </div>
                           </div>
 
-                          {/* Card Action Buttons */}
-                          <div className="pt-3 border-t border-border flex items-center gap-2">
+                          {/* Purchase Action Button */}
+                          <div className="mt-3 pt-2">
                             <button
                               type="button"
                               disabled={isSoldOut}
                               onClick={() => handleOpenOrder(listing)}
-                              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                              className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                                 isSoldOut
-                                  ? 'bg-surface-2 text-muted cursor-not-allowed border border-border'
-                                  : 'bg-buyer text-text hover:opacity-90 shadow-md shadow-buyer/10'
+                                  ? 'bg-[#15281e] text-slate-500 cursor-not-allowed border border-[#214734]'
+                                  : 'bg-[#2f6f45] hover:bg-[#255b38] text-white shadow-md shadow-emerald-950/40'
                               }`}
                             >
-                              <ShoppingBag size={14} />
+                              <ShoppingBag size={13} />
                               <span>{isSoldOut ? 'Sold Out' : 'Direct Order'}</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setFarmerInfoListing(listing)}
-                              className="p-2.5 rounded-xl border border-border bg-surface-2 text-muted hover:text-text hover:border-buyer/50 transition-colors cursor-pointer"
-                              title="View Farmer & Farm Details"
-                            >
-                              <User size={15} />
                             </button>
                           </div>
                         </div>
@@ -735,7 +807,7 @@ export default function Marketplace() {
               </motion.div>
             )}
 
-            {/* VIEW 2: MY ORDERS & TRACKING */}
+            {/* VIEW 2: BUYER ORDERS & TRACKING */}
             {viewTab === 'orders' && (
               <motion.div
                 key="orders"
@@ -743,159 +815,44 @@ export default function Marketplace() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-6"
+                className="space-y-4"
               >
-                {/* View Header */}
-                <div className="bg-surface border border-border rounded-3xl p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                {/* Header */}
+                <div className="bg-[#0c1a14]/85 backdrop-blur-md border border-[#1b3b2b]/80 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <PackageCheck size={20} className="text-buyer" />
-                      <h1 className="text-2xl font-serif font-bold text-text">
-                        Your Orders & Pickup Tracking ({buyerOrders.length})
-                      </h1>
-                    </div>
-                    <p className="text-xs text-muted mt-1">
-                      Real-time lifecycle tracking from farmer acceptance to Central Store collection.
+                    <h2 className="text-xl sm:text-2xl font-serif font-bold text-white flex items-center gap-2">
+                      <PackageCheck size={22} className="text-emerald-400" />
+                      My Orders & Central Store Tracking
+                    </h2>
+                    <p className="text-xs text-slate-300 mt-1">
+                      Monitor farmgate shipments, quality grading at Central Store, and pick-up readiness.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setViewTab('marketplace')}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-buyer text-text text-xs font-semibold hover:opacity-90 cursor-pointer self-start sm:self-auto"
-                  >
-                    <Plus size={14} />
-                    <span>Browse More Harvest</span>
-                  </button>
+                  <span className="text-xs text-slate-300 px-3 py-1.5 rounded-full bg-[#13281e] border border-[#214734] self-start sm:self-auto font-semibold">
+                    {buyerOrders.length} Total Orders Placed
+                  </span>
                 </div>
 
                 {buyerOrders.length === 0 ? (
-                  <div className="bg-surface border border-dashed border-border rounded-3xl p-12 text-center space-y-3">
-                    <ShoppingBag className="mx-auto text-muted/60" size={36} />
-                    <h3 className="text-base font-semibold text-text">No orders placed yet</h3>
-                    <p className="text-xs text-muted max-w-sm mx-auto">
-                      Explore the harvest catalog to order fresh produce directly from farmers.
+                  <div className="bg-[#0c1a14]/90 backdrop-blur-md border border-[#1b3b2b]/80 rounded-3xl p-12 text-center space-y-3 shadow-2xl">
+                    <ShoppingBag size={36} className="mx-auto text-slate-500" />
+                    <h3 className="text-lg font-medium text-white">No orders placed yet</h3>
+                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                      Browse available produce from local farmers and place direct farmgate orders.
                     </p>
                     <button
                       type="button"
                       onClick={() => setViewTab('marketplace')}
-                      className="mt-2 px-4 py-2 rounded-xl bg-buyer text-text text-xs font-semibold hover:opacity-90 cursor-pointer"
+                      className="mt-2 px-4 py-2 rounded-xl bg-[#2f6f45] text-white text-xs font-semibold cursor-pointer"
                     >
-                      Browse Harvest Marketplace
+                      Browse Produce Marketplace
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {buyerOrders.map((order) => {
-                      const isPending = order.status === 'PENDING_APPROVAL'
-                      const isAccepted = order.status === 'ACCEPTED'
-                      const isAtStore = order.status === 'DELIVERED_TO_STORE'
-                      const isCompleted = order.status === 'COLLECTED_BY_BUYER'
-                      const isRejected = order.status === 'REJECTED'
-
-                      return (
-                        <div
-                          key={order.id}
-                          className="bg-surface border border-border rounded-3xl p-6 shadow-sm space-y-4 hover:border-buyer/40 transition-all"
-                        >
-                          {/* Header */}
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/50 pb-4">
-                            <div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-mono text-xs font-bold text-buyer">#{order.id}</span>
-                                <h3 className="font-serif text-lg font-bold text-text">
-                                  {order.cropName}{' '}
-                                  <span className="font-sans text-xs font-normal text-muted">
-                                    ({order.variety})
-                                  </span>
-                                </h3>
-                                <span className="text-[10px] px-2.5 py-0.5 rounded-full font-semibold bg-buyer/15 text-buyer border border-buyer/30">
-                                  Order Placed
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted mt-1">
-                                Farmer:{' '}
-                                <strong className="text-text">
-                                  {getFarmerDisplayName(order.farmerId).name}
-                                </strong>{' '}
-                                <span className="text-[11px] text-muted">({order.farmerId})</span>
-                              </p>
-                            </div>
-
-                            <div className="sm:text-right">
-                              <span className="text-xs text-muted block">Order Total</span>
-                              <span className="text-lg font-bold text-buyer">
-                                ₹{order.totalAmount.toLocaleString()}
-                              </span>
-                              <span className="text-[11px] text-muted block">
-                                {order.quantityKg >= 1
-                                  ? `${order.quantityKg} kg`
-                                  : `${Math.round(order.quantityKg * 1000)} g (${order.quantityKg} kg)`}{' '}
-                                @ ₹{order.pricePerKg}/kg
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Stepper Progress */}
-                          <div className="py-2">
-                            <OrderStepper
-                              status={order.status}
-                              farmerDeliveredAt={order.farmerDeliveredAt}
-                              buyerCollectedAt={order.buyerCollectedAt}
-                            />
-                          </div>
-
-                          {/* Status Advice Card */}
-                          <div className="p-3.5 rounded-2xl bg-surface-2/60 border border-border text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              {isPending && (
-                                <>
-                                  <Clock size={15} className="text-gold shrink-0 animate-pulse" />
-                                  <span className="text-gold font-medium">
-                                    Waiting for farmer to accept your order. You will receive a notification as soon as they respond.
-                                  </span>
-                                </>
-                              )}
-                              {isAccepted && (
-                                <>
-                                  <Truck size={15} className="text-emerald-400 shrink-0" />
-                                  <span className="text-emerald-300 font-medium">
-                                    Farmer accepted! The farmer is transporting the produce to the Central Store.
-                                  </span>
-                                </>
-                              )}
-                              {isAtStore && (
-                                <>
-                                  <Store size={15} className="text-sky-400 shrink-0" />
-                                  <span className="text-sky-300 font-medium">
-                                    Produce arrived at Central Store! Verified and ready for your collection.
-                                  </span>
-                                </>
-                              )}
-                              {isCompleted && (
-                                <>
-                                  <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
-                                  <span className="text-emerald-300 font-medium">
-                                    Order collected from Central Store. Transaction complete!
-                                  </span>
-                                </>
-                              )}
-                              {isRejected && (
-                                <>
-                                  <AlertCircle size={15} className="text-red-400 shrink-0" />
-                                  <span className="text-red-300 font-medium">
-                                    Farmer was unable to fulfill this order: {order.rejectionReason || 'Declined'}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-
-                            <span className="text-[11px] text-muted shrink-0">
-                              {new Date(order.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                      )
-                    })}
+                  <div className="space-y-5">
+                    {buyerOrders.map((order) => (
+                      <OrderTrackingCard key={order.id} order={order} />
+                    ))}
                   </div>
                 )}
               </motion.div>
@@ -904,195 +861,106 @@ export default function Marketplace() {
         </main>
       </div>
 
-      {/* Order Produce Modal */}
+      {/* ─── ORDER MODAL ─── */}
       {orderingListing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-surface border border-border rounded-3xl max-w-md w-full p-6 shadow-2xl relative animate-auth-in">
-            <button
-              onClick={() => setOrderingListing(null)}
-              className="absolute top-4 right-4 text-muted hover:text-text cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="flex items-center gap-2 mb-2 text-buyer text-xs font-semibold uppercase tracking-wider">
-              <ShoppingBag size={14} /> Direct Produce Order
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-auth-fade">
+          <div className="w-full max-w-md bg-[#0c1a14] border border-[#214734] rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#1b3b2b]/70 pb-3">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="text-emerald-400" size={18} />
+                <h3 className="font-serif text-lg font-bold text-white">
+                  Place Direct Harvest Order
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOrderingListing(null)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X size={16} />
+              </button>
             </div>
-            <h2 className="text-xl font-serif font-bold text-text">
-              Order {orderingListing.cropName} ({orderingListing.variety})
-            </h2>
-            <p className="text-xs text-muted mt-1">
-              Farmer: <span className="text-text">{orderingListing.farmerId}</span> · {orderingListing.location}
-            </p>
 
             {orderFeedback?.ok ? (
-              <div className="my-6 p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-center space-y-2">
+              <div className="p-4 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-200 text-center space-y-2">
                 <CheckCircle2 size={32} className="mx-auto text-emerald-400" />
-                <div className="text-sm font-semibold">Order Placed Successfully!</div>
-                <div className="text-xs text-emerald-300">
-                  Order ID: <span className="font-mono font-bold">{orderFeedback.orderId}</span>
-                </div>
-                <div className="text-xs text-muted mt-1">
-                  The listing quantity has been updated automatically.
-                </div>
+                <h4 className="font-bold text-sm text-white">Order Successfully Placed!</h4>
+                <p className="text-xs text-slate-300">
+                  Order #{orderFeedback.orderId} sent to farmer. Redirecting to tracking...
+                </p>
               </div>
             ) : (
-              <div className="mt-5 space-y-4">
-                {orderFeedback?.error && (
-                  <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/30 text-red-200 text-xs flex items-center gap-2">
-                    <AlertCircle size={14} className="shrink-0 text-red-400" />
-                    <span>{orderFeedback.error}</span>
+              <>
+                <div className="p-3.5 rounded-2xl bg-[#13281e]/80 border border-[#214734] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-white">{orderingListing.cropName}</span>
+                    <span className="font-bold text-emerald-400">₹{orderingListing.askingPrice}/kg</span>
                   </div>
-                )}
-
-                <div className="p-3.5 bg-surface-2 rounded-2xl border border-border space-y-1.5 text-xs">
-                  <div className="flex justify-between text-muted">
-                    <span>Available stock:</span>
-                    <span className="font-semibold text-text">{orderingListing.quantityKg} kg</span>
-                  </div>
-                  <div className="flex justify-between text-muted">
-                    <span>Unit price:</span>
-                    <span className="font-semibold text-buyer">₹{orderingListing.askingPrice}/kg</span>
-                  </div>
-                  <div className="flex justify-between text-muted">
-                    <span>Quality grade:</span>
-                    <span className="font-semibold text-text">Grade {orderingListing.qualityGrade}</span>
-                  </div>
+                  <p className="text-xs text-slate-400">Variety: {orderingListing.variety}</p>
+                  <p className="text-xs text-slate-400">Available: {orderingListing.quantityKg} kg</p>
                 </div>
 
-                {/* Quantity picker */}
-                <div>
-                  <label className="block text-xs font-medium text-muted mb-1.5">
+                {/* Quantity selector */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-300">
                     Order Quantity (kg)
                   </label>
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
-                      onClick={() => setOrderQty((prev) => Math.max(1, prev - 10))}
-                      className="p-2 rounded-xl bg-surface-2 border border-border text-text hover:border-buyer cursor-pointer"
+                      onClick={() => setOrderQty(Math.max(1, orderQty - 5))}
+                      className="w-9 h-9 rounded-xl bg-[#13281e] border border-[#214734] text-white flex items-center justify-center hover:bg-[#1a382a] cursor-pointer"
                     >
                       <Minus size={14} />
                     </button>
                     <input
                       type="number"
-                      min={1}
+                      min="1"
                       max={orderingListing.quantityKg}
                       value={orderQty}
                       onChange={(e) => {
-                        const val = Number(e.target.value)
+                        const val = parseInt(e.target.value) || 1
                         setOrderQty(Math.min(orderingListing.quantityKg, Math.max(1, val)))
                       }}
-                      className="flex-1 text-center py-2 bg-surface-2 border border-border rounded-xl text-sm text-text font-semibold outline-none focus:border-buyer"
+                      className="flex-1 text-center py-2 bg-[#13281e] border border-[#214734] rounded-xl text-white font-bold text-sm outline-none focus:border-emerald-500"
                     />
                     <button
                       type="button"
-                      onClick={() =>
-                        setOrderQty((prev) => Math.min(orderingListing.quantityKg, prev + 10))
-                      }
-                      className="p-2 rounded-xl bg-surface-2 border border-border text-text hover:border-buyer cursor-pointer"
+                      onClick={() => setOrderQty(Math.min(orderingListing.quantityKg, orderQty + 5))}
+                      className="w-9 h-9 rounded-xl bg-[#13281e] border border-[#214734] text-white flex items-center justify-center hover:bg-[#1a382a] cursor-pointer"
                     >
                       <Plus size={14} />
                     </button>
                   </div>
                 </div>
 
-                {/* Total Cost preview */}
-                <div className="p-3.5 rounded-2xl bg-surface-2 border border-buyer/30 flex items-center justify-between">
-                  <span className="text-xs text-muted">Estimated Total Cost:</span>
-                  <span className="text-xl font-bold text-buyer">
-                    ₹{(orderQty * orderingListing.askingPrice).toLocaleString()}
-                  </span>
+                {/* Cost breakdown */}
+                <div className="p-3 rounded-2xl bg-[#13281e]/60 border border-[#214734]/60 space-y-1 text-xs">
+                  <div className="flex justify-between text-slate-300">
+                    <span>Farmgate Subtotal:</span>
+                    <span className="font-semibold text-white">₹{orderQty * orderingListing.askingPrice}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-300">
+                    <span>Central Store Platform Fee:</span>
+                    <span className="text-emerald-400 font-semibold">₹0 (Free direct)</span>
+                  </div>
+                  <div className="flex justify-between text-white font-bold text-sm border-t border-[#1b3b2b] pt-1.5 mt-1">
+                    <span>Total Payment:</span>
+                    <span className="text-emerald-400">₹{orderQty * orderingListing.askingPrice}</span>
+                  </div>
                 </div>
 
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleConfirmOrder}
-                    className="flex-1 py-2.5 px-4 rounded-xl bg-buyer text-text text-sm font-semibold hover:opacity-90 shadow-md transition-all cursor-pointer"
-                  >
-                    Confirm Purchase
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOrderingListing(null)}
-                    className="py-2.5 px-4 rounded-xl border border-border bg-surface-2 text-sm text-muted hover:text-text cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
+                {/* Confirm order button */}
+                <button
+                  type="button"
+                  onClick={handleConfirmOrder}
+                  className="w-full py-3 px-4 rounded-xl bg-[#2f6f45] hover:bg-[#255b38] text-white font-semibold text-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 size={16} />
+                  <span>Confirm Farmgate Order (₹{orderQty * orderingListing.askingPrice})</span>
+                </button>
+              </>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Farmer Contact & Details Modal */}
-      {farmerInfoListing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-surface border border-border rounded-3xl max-w-md w-full p-6 shadow-2xl relative animate-auth-in">
-            <button
-              onClick={() => setFarmerInfoListing(null)}
-              className="absolute top-4 right-4 text-muted hover:text-text cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="flex items-center gap-2 mb-3 text-farmer text-xs font-semibold uppercase tracking-wider">
-              <User size={14} /> Verified Farmer Information
-            </div>
-
-            <h3 className="text-xl font-serif font-bold text-text">{farmerInfoListing.farmerId}</h3>
-            <p className="text-xs text-muted mt-1">
-              Registered farm supplier on AgriMarketplace
-            </p>
-
-            <div className="mt-4 space-y-3 bg-surface-2 border border-border rounded-2xl p-4 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-muted">Farmer Identifier:</span>
-                <span className="font-mono text-text">{farmerInfoListing.farmerId}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted">Farm Location:</span>
-                <span className="text-text">{farmerInfoListing.location}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted">Listed Crop:</span>
-                <span className="text-text font-medium">
-                  {farmerInfoListing.cropName} ({farmerInfoListing.variety})
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted">Harvest Date:</span>
-                <span className="text-text">{farmerInfoListing.harvestDate}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted">Quality Rating:</span>
-                <span className="text-emerald-400 font-semibold">
-                  Grade {farmerInfoListing.qualityGrade} Verified
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-5 flex gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  const targetListing = farmerInfoListing
-                  setFarmerInfoListing(null)
-                  handleOpenOrder(targetListing)
-                }}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-buyer text-text text-xs font-semibold hover:opacity-90 cursor-pointer"
-              >
-                Place Order with Farmer
-              </button>
-              <button
-                type="button"
-                onClick={() => setFarmerInfoListing(null)}
-                className="py-2.5 px-4 rounded-xl border border-border bg-surface-2 text-xs text-muted hover:text-text cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
           </div>
         </div>
       )}

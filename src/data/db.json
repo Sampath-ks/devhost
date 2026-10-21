@@ -1,18 +1,46 @@
 {
   "listings": [
     {
+      "farmerId": "chiraagkulal877@gmail.com",
+      "cropName": "Tomato",
+      "variety": "टमाटर (Tamatar)",
+      "quantityKg": 33,
+      "askingPrice": 23,
+      "qualityGrade": "A",
+      "harvestDate": "2026-10-21",
+      "location": "Nashik",
+      "id": "L1792586116624",
+      "status": "Active",
+      "createdAt": "2026-10-21T12:35:16.624Z",
+      "updatedAt": "2026-10-21T12:35:16.624Z"
+    },
+    {
+      "farmerId": "moolyachirag90@gmail.com",
+      "cropName": "Tomato",
+      "variety": "टमाटर (Tamatar)",
+      "quantityKg": 0,
+      "askingPrice": 250,
+      "qualityGrade": "A",
+      "harvestDate": "2026-10-21",
+      "location": "Varanasi",
+      "id": "L1792563739981",
+      "status": "Sold Out",
+      "createdAt": "2026-10-21T06:22:19.981Z",
+      "updatedAt": "2026-10-21T06:25:10.196Z"
+    },
+    {
       "farmerId": "sampathchokkady@gmail.com",
       "cropName": "Tomato",
       "variety": "टमाटर (Tamatar)",
-      "quantityKg": 234,
+      "quantityKg": 0,
       "askingPrice": 234,
       "qualityGrade": "A",
       "harvestDate": "2026-10-21",
       "location": "Nashik",
       "id": "L1792563144346",
-      "status": "Active",
+      "status": "Sold Out",
       "createdAt": "2026-10-21T06:12:24.346Z",
-      "updatedAt": "2026-10-21T06:12:24.346Z"
+      "updatedAt": "2026-10-21T06:25:10.196Z"
     },
     {
       "id": "L1792512333849",
@@ -187,42 +215,42 @@
       "farmerId": "rajesh.kumar@greenvalley.in",
       "cropName": "Tomato",
       "variety": "Roma",
-      "quantityKg": 50,
+      "quantityKg": 0,
       "askingPrice": 26,
       "qualityGrade": "A",
       "harvestDate": "2026-10-19",
       "location": "Kolar, Karnataka",
       "status": "Active",
       "createdAt": "2026-10-19T08:00:00.000Z",
-      "updatedAt": "2026-10-19T08:00:00.000Z"
+      "updatedAt": "2026-10-21T06:25:10.196Z"
     },
     {
       "id": "L009",
       "farmerId": "basavaraj.m@mysurufresh.com",
       "cropName": "Tomato",
       "variety": "Cherry",
-      "quantityKg": 30,
+      "quantityKg": 0,
       "askingPrice": 28,
       "qualityGrade": "A",
       "harvestDate": "2026-10-19",
       "location": "Mysuru, Karnataka",
       "status": "Active",
       "createdAt": "2026-10-19T09:30:00.000Z",
-      "updatedAt": "2026-10-19T09:30:00.000Z"
+      "updatedAt": "2026-10-21T06:25:10.196Z"
     },
     {
       "id": "L010",
       "farmerId": "savita.patil@belagaviorganics.in",
       "cropName": "Tomato",
       "variety": "Country (Nati)",
-      "quantityKg": 20,
+      "quantityKg": 0,
       "askingPrice": 22,
       "qualityGrade": "B",
       "harvestDate": "2026-10-18",
       "location": "Belagavi, Karnataka",
       "status": "Active",
       "createdAt": "2026-10-18T11:00:00.000Z",
-      "updatedAt": "2026-10-21T03:53:44.928Z"
+      "updatedAt": "2026-10-21T06:25:10.196Z"
     },
     {
       "id": "L011",
@@ -293,9 +321,137 @@
       "status": "Active",
       "createdAt": "2026-10-18T09:00:00.000Z",
       "updatedAt": "2026-10-21T05:38:50.614Z"
+    },
+    {
+      "farmerId": "moolyachirag90@gmail.com",
+      "cropName": "Potato",
+      "variety": "आलू (Aaloo)",
+      "quantityKg": 400,
+      "askingPrice": 22,
+      "qualityGrade": "A",
+      "harvestDate": "2026-10-21",
+      "location": "Nashik",
+      "id": "L1792557749792",
+      "status": "Active",
+      "createdAt": "2026-10-21T04:42:29.792Z",
+      "updatedAt": "2026-10-21T04:42:29.792Z"
+    },
+    {
+      "farmerId": "hiragkulal877@gmail.com",
+      "cropName": "Potato",
+      "variety": "आलू (Aaloo)",
+      "quantityKg": 200,
+      "askingPrice": 34,
+      "qualityGrade": "A",
+      "harvestDate": "2026-10-21",
+      "location": "Nashik",
+      "id": "L1792557655174",
+      "status": "Active",
+      "createdAt": "2026-10-21T04:40:55.174Z",
+      "updatedAt": "2026-10-21T04:40:55.174Z"
+    },
+    {
+      "farmerId": "hiragkulal877@gmail.com",
+      "cropName": "Potato",
+      "variety": "आलू (Aaloo)",
+      "quantityKg": 100,
+      "askingPrice": 545,
+      "qualityGrade": "A",
+      "harvestDate": "2026-10-21",
+      "location": "Nashik",
+      "id": "L1792557602574",
+      "status": "Active",
+      "createdAt": "2026-10-21T04:40:02.574Z",
+      "updatedAt": "2026-10-21T04:40:02.574Z"
     }
   ],
   "orders": [
+    {
+      "id": "ORD-0198-267",
+      "listingId": "L010",
+      "cropName": "Tomato",
+      "variety": "Country (Nati)",
+      "farmerId": "savita.patil@belagaviorganics.in",
+      "buyerId": "moolyachirag7@gmail.com",
+      "quantityKg": 20,
+      "pricePerKg": 22,
+      "totalAmount": 440,
+      "status": "PENDING_APPROVAL",
+      "createdAt": "2026-10-21T06:25:10.198Z",
+      "updatedAt": "2026-10-21T06:25:10.198Z"
+    },
+    {
+      "id": "ORD-0199-116",
+      "listingId": "L008",
+      "cropName": "Tomato",
+      "variety": "Roma",
+      "farmerId": "rajesh.kumar@greenvalley.in",
+      "buyerId": "moolyachirag7@gmail.com",
+      "quantityKg": 50,
+      "pricePerKg": 26,
+      "totalAmount": 1300,
+      "status": "PENDING_APPROVAL",
+      "createdAt": "2026-10-21T06:25:10.198Z",
+      "updatedAt": "2026-10-21T06:25:10.198Z"
+    },
+    {
+      "id": "ORD-0200-177",
+      "listingId": "L009",
+      "cropName": "Tomato",
+      "variety": "Cherry",
+      "farmerId": "basavaraj.m@mysurufresh.com",
+      "buyerId": "moolyachirag7@gmail.com",
+      "quantityKg": 30,
+      "pricePerKg": 28,
+      "totalAmount": 840,
+      "status": "PENDING_APPROVAL",
+      "createdAt": "2026-10-21T06:25:10.198Z",
+      "updatedAt": "2026-10-21T06:25:10.198Z"
+    },
+    {
+      "id": "ORD-0201-559",
+      "listingId": "L1792563144346",
+      "cropName": "Tomato",
+      "variety": "टमाटर (Tamatar)",
+      "farmerId": "sampathchokkady@gmail.com",
+      "buyerId": "moolyachirag7@gmail.com",
+      "quantityKg": 234,
+      "pricePerKg": 234,
+      "totalAmount": 54756,
+      "status": "PENDING_APPROVAL",
+      "createdAt": "2026-10-21T06:25:10.198Z",
+      "updatedAt": "2026-10-21T06:25:10.198Z"
+    },
+    {
+      "id": "ORD-0202-111",
+      "listingId": "L1792563739981",
+      "cropName": "Tomato",
+      "variety": "टमाटर (Tamatar)",
+      "farmerId": "moolyachirag90@gmail.com",
+      "buyerId": "moolyachirag7@gmail.com",
+      "quantityKg": 350,
+      "pricePerKg": 250,
+      "totalAmount": 87500,
+      "status": "PENDING_APPROVAL",
+      "createdAt": "2026-10-21T06:25:10.198Z",
+      "updatedAt": "2026-10-21T06:25:10.198Z"
+    },
+    {
+      "id": "ORD-8351-664",
+      "listingId": "L1792563739981",
+      "cropName": "Tomato",
+      "variety": "टमाटर (Tamatar)",
+      "farmerId": "moolyachirag90@gmail.com",
+      "buyerId": "moolyachirag7@gmail.com",
+      "quantityKg": 50,
+      "pricePerKg": 250,
+      "totalAmount": 12500,
+      "status": "COLLECTED_BY_BUYER",
+      "createdAt": "2026-10-21T06:23:18.351Z",
+      "updatedAt": "2026-10-21T06:24:04.801Z",
+      "farmerDeliveredAt": "2026-10-21T06:23:57.974Z",
+      "buyerCollectedAt": "2026-10-21T06:24:04.801Z"
+    },
     {
       "id": "ORD-0616-794",
       "listingId": "L015",
@@ -654,10 +810,11 @@
       "quantityKg": 100,
       "pricePerKg": 18,
       "totalAmount": 1800,
-      "status": "DELIVERED_TO_STORE",
+      "status": "COLLECTED_BY_BUYER",
       "createdAt": "2026-10-20T13:00:00.000Z",
-      "updatedAt": "2026-10-20T15:15:00.000Z",
-      "farmerDeliveredAt": "2026-10-20T15:15:00.000Z"
+      "updatedAt": "2026-10-21T13:22:59.476Z",
+      "farmerDeliveredAt": "2026-10-20T15:15:00.000Z",
+      "buyerCollectedAt": "2026-10-21T13:22:59.476Z"
     },
     {
       "id": "ORD-8803",
@@ -669,9 +826,11 @@
       "quantityKg": 200,
       "pricePerKg": 21,
       "totalAmount": 4200,
-      "status": "ACCEPTED",
+      "status": "COLLECTED_BY_BUYER",
       "createdAt": "2026-10-20T14:00:00.000Z",
-      "updatedAt": "2026-10-20T15:00:00.000Z"
+      "updatedAt": "2026-10-21T13:23:12.015Z",
+      "farmerDeliveredAt": "2026-10-21T13:23:10.302Z",
+      "buyerCollectedAt": "2026-10-21T13:23:12.015Z"
     },
     {
       "id": "ORD-6761",
@@ -691,6 +850,116 @@
     }
   ],
   "notifications": [
+    {
+      "recipientId": "moolyachirag90@gmail.com",
+      "title": "New Order Received",
+      "message": "moolyachirag7@gmail.com requested an order: please provide 350kg of Tomato (Total: ₹87500). Please accept or reject.",
+      "orderId": "ORD-0202-111",
+      "type": "info",
+      "id": "notif-1792563910206-btwt",
+      "read": false,
+      "createdAt": "2026-10-21T06:25:10.206Z"
+    },
+    {
+      "recipientId": "sampathchokkady@gmail.com",
+      "title": "New Order Received",
+      "message": "moolyachirag7@gmail.com requested an order: please provide 234kg of Tomato (Total: ₹54756). Please accept or reject.",
+      "orderId": "ORD-0201-559",
+      "type": "info",
+      "id": "notif-1792563910204-khog",
+      "read": false,
+      "createdAt": "2026-10-21T06:25:10.204Z"
+    },
+    {
+      "recipientId": "basavaraj.m@mysurufresh.com",
+      "title": "New Order Received",
+      "message": "moolyachirag7@gmail.com requested an order: please provide 30kg of Tomato (Total: ₹840). Please accept or reject.",
+      "orderId": "ORD-0200-177",
+      "type": "info",
+      "id": "notif-1792563910203-0da4",
+      "read": false,
+      "createdAt": "2026-10-21T06:25:10.203Z"
+    },
+    {
+      "recipientId": "rajesh.kumar@greenvalley.in",
+      "title": "New Order Received",
+      "message": "moolyachirag7@gmail.com requested an order: please provide 50kg of Tomato (Total: ₹1300). Please accept or reject.",
+      "orderId": "ORD-0199-116",
+      "type": "info",
+      "id": "notif-1792563910201-6wpq",
+      "read": false,
+      "createdAt": "2026-10-21T06:25:10.201Z"
+    },
+    {
+      "recipientId": "savita.patil@belagaviorganics.in",
+      "title": "New Order Received",
+      "message": "moolyachirag7@gmail.com requested an order: please provide 20kg of Tomato (Total: ₹440). Please accept or reject.",
+      "orderId": "ORD-0198-267",
+      "type": "info",
+      "id": "notif-1792563910199-nfq1",
+      "read": false,
+      "createdAt": "2026-10-21T06:25:10.199Z"
+    },
+    {
+      "recipientId": "moolyachirag90@gmail.com",
+      "title": "Produce Collected by Buyer",
+      "message": "Buyer has collected order #ORD-8351-664 (Tomato). Total payout ₹12500 approved.",
+      "orderId": "ORD-8351-664",
+      "type": "success",
+      "id": "notif-1792563844804-l62i",
+      "read": false,
+      "createdAt": "2026-10-21T06:24:04.804Z"
+    },
+    {
+      "recipientId": "moolyachirag7@gmail.com",
+      "title": "Order Completed",
+      "message": "Thank you for collecting your order #ORD-8351-664 of Tomato. Transaction completed.",
+      "orderId": "ORD-8351-664",
+      "type": "success",
+      "id": "notif-1792563844803-rfgp",
+      "read": false,
+      "createdAt": "2026-10-21T06:24:04.803Z"
+    },
+    {
+      "recipientId": "moolyachirag90@gmail.com",
+      "title": "Store Delivery Confirmed",
+      "message": "Your delivery for order #ORD-8351-664 was verified and accepted into the Central Store warehouse.",
+      "orderId": "ORD-8351-664",
+      "type": "info",
+      "id": "notif-1792563837978-odyu",
+      "read": false,
+      "createdAt": "2026-10-21T06:23:57.978Z"
+    },
+    {
+      "recipientId": "moolyachirag7@gmail.com",
+      "title": "Produce Arrived at Central Store",
+      "message": "Your order #ORD-8351-664 (50kg Tomato) has been delivered to Central Store and is ready for pickup!",
+      "orderId": "ORD-8351-664",
+      "type": "success",
+      "id": "notif-1792563837976-5gt0",
+      "read": false,
+      "createdAt": "2026-10-21T06:23:57.976Z"
+    },
+    {
+      "recipientId": "moolyachirag7@gmail.com",
+      "title": "Order Accepted by Farmer",
+      "message": "Farmer moolyachirag90@gmail.com has accepted your order for 50kg of Tomato. Produce will now be delivered to Central Store.",
+      "orderId": "ORD-8351-664",
+      "type": "success",
+      "id": "notif-1792563819165-agfl",
+      "read": false,
+      "createdAt": "2026-10-21T06:23:39.165Z"
+    },
+    {
+      "recipientId": "moolyachirag90@gmail.com",
+      "title": "New Order Received",
+      "message": "moolyachirag7@gmail.com requested an order: please provide 50kg of Tomato (Total: ₹12500). Please accept or reject.",
+      "orderId": "ORD-8351-664",
+      "type": "info",
+      "id": "notif-1792563798353-ksq4",
+      "read": false,
+      "createdAt": "2026-10-21T06:23:18.353Z"
+    },
     {
       "recipientId": "ramesh.patil@karnatakaagri.org",
       "title": "New Order Received",
@@ -1350,6 +1619,126 @@
       "id": "notif-1792556785982-weid",
       "read": false,
       "createdAt": "2026-10-21T04:26:25.982Z"
+    },
+    {
+      "recipientId": "ramesh.patil@karnatakaagri.org",
+      "title": "Produce Collected by Buyer",
+      "message": "Buyer has collected order #ORD-8803 (Potato). Total payout ₹4200 approved.",
+      "orderId": "ORD-8803",
+      "type": "success",
+      "id": "notif-1792562870809-u13n",
+      "read": false,
+      "createdAt": "2026-10-21T06:07:50.809Z"
+    },
+    {
+      "recipientId": "buyer.deepak@gmail.com",
+      "title": "Order Completed",
+      "message": "Thank you for collecting your order #ORD-8803 of Potato. Transaction completed.",
+      "orderId": "ORD-8803",
+      "type": "success",
+      "id": "notif-1792562870807-1zab",
+      "read": false,
+      "createdAt": "2026-10-21T06:07:50.807Z"
+    },
+    {
+      "recipientId": "hiragkulal877@gmail.com",
+      "title": "Produce Collected by Buyer",
+      "message": "Buyer has collected order #ORD-8802 (Onion). Total payout ₹1800 approved.",
+      "orderId": "ORD-8802",
+      "type": "success",
+      "id": "notif-1792562868566-8kky",
+      "read": false,
+      "createdAt": "2026-10-21T06:07:48.566Z"
+    },
+    {
+      "recipientId": "anand.wholesaler@blr.com",
+      "title": "Order Completed",
+      "message": "Thank you for collecting your order #ORD-8802 of Onion. Transaction completed.",
+      "orderId": "ORD-8802",
+      "type": "success",
+      "id": "notif-1792562868564-ymtd",
+      "read": false,
+      "createdAt": "2026-10-21T06:07:48.564Z"
+    },
+    {
+      "recipientId": "ramesh.patil@karnatakaagri.org",
+      "title": "Store Delivery Confirmed",
+      "message": "Your delivery for order #ORD-8803 was verified and accepted into the Central Store warehouse.",
+      "orderId": "ORD-8803",
+      "type": "info",
+      "id": "notif-1792562864666-30yr",
+      "read": false,
+      "createdAt": "2026-10-21T06:07:44.666Z"
+    },
+    {
+      "recipientId": "buyer.deepak@gmail.com",
+      "title": "Produce Arrived at Central Store",
+      "message": "Your order #ORD-8803 (200kg Potato) has been delivered to Central Store and is ready for pickup!",
+      "orderId": "ORD-8803",
+      "type": "success",
+      "id": "notif-1792562864664-evaq",
+      "read": false,
+      "createdAt": "2026-10-21T06:07:44.664Z"
+    },
+    {
+      "recipientId": "ramesh.patil@karnatakaagri.org",
+      "title": "Produce Collected by Buyer",
+      "message": "Buyer has collected order #ORD-8803 (Potato). Total payout ₹4200 approved.",
+      "orderId": "ORD-8803",
+      "type": "success",
+      "id": "notif-1792588992019-uxef",
+      "read": false,
+      "createdAt": "2026-10-21T13:23:12.019Z"
+    },
+    {
+      "recipientId": "buyer.deepak@gmail.com",
+      "title": "Order Completed",
+      "message": "Thank you for collecting your order #ORD-8803 of Potato. Transaction completed.",
+      "orderId": "ORD-8803",
+      "type": "success",
+      "id": "notif-1792588992017-h5r7",
+      "read": false,
+      "createdAt": "2026-10-21T13:23:12.017Z"
+    },
+    {
+      "recipientId": "ramesh.patil@karnatakaagri.org",
+      "title": "Store Delivery Confirmed",
+      "message": "Your delivery for order #ORD-8803 was verified and accepted into the Central Store warehouse.",
+      "orderId": "ORD-8803",
+      "type": "info",
+      "id": "notif-1792588990307-7677",
+      "read": false,
+      "createdAt": "2026-10-21T13:23:10.307Z"
+    },
+    {
+      "recipientId": "buyer.deepak@gmail.com",
+      "title": "Produce Arrived at Central Store",
+      "message": "Your order #ORD-8803 (200kg Potato) has been delivered to Central Store and is ready for pickup!",
+      "orderId": "ORD-8803",
+      "type": "success",
+      "id": "notif-1792588990304-m0w2",
+      "read": false,
+      "createdAt": "2026-10-21T13:23:10.304Z"
+    },
+    {
+      "recipientId": "hiragkulal877@gmail.com",
+      "title": "Produce Collected by Buyer",
+      "message": "Buyer has collected order #ORD-8802 (Onion). Total payout ₹1800 approved.",
+      "orderId": "ORD-8802",
+      "type": "success",
+      "id": "notif-1792588979480-2j99",
+      "read": false,
+      "createdAt": "2026-10-21T13:22:59.480Z"
+    },
+    {
+      "recipientId": "anand.wholesaler@blr.com",
+      "title": "Order Completed",
+      "message": "Thank you for collecting your order #ORD-8802 of Onion. Transaction completed.",
+      "orderId": "ORD-8802",
+      "type": "success",
+      "id": "notif-1792588979478-skzr",
+      "read": false,
+      "createdAt": "2026-10-21T13:22:59.478Z"
     }
   ]
 }
