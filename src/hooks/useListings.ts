@@ -19,17 +19,55 @@ interface State {
   seeded: string[] // farmer IDs that already received the demo data
 }
 
+const CANONICAL_SEED_LISTINGS: Record<string, Partial<ProduceListing>> = {
+  L001: { farmerId: 'hiragkulal877@gmail.com', cropName: 'Tomato', variety: 'Hybrid', quantityKg: 0, status: 'Supplied' },
+  L002: { farmerId: 'hiragkulal877@gmail.com', cropName: 'Onion', variety: 'Red', quantityKg: 500, status: 'Supplied' },
+  L003: { farmerId: 'ramesh.patil@karnatakaagri.org', cropName: 'Potato', variety: 'Kufri Jyoti', quantityKg: 850, status: 'Active' },
+  L004: { farmerId: 'anita.shetty@coastalagri.in', cropName: 'Banana', variety: 'Robusta', quantityKg: 350, status: 'Active' },
+  L005: { farmerId: 'devadas.gowda@mandyafarms.com', cropName: 'Rice', variety: 'Sona Masoori', quantityKg: 1200, status: 'Active' },
+  L006: { farmerId: 'suresh.naik@hublifresh.in', cropName: 'Carrot', variety: 'Orange Supreme', quantityKg: 400, status: 'Active' },
+  L007: { farmerId: 'hiragkulal877@gmail.com', cropName: 'Mango', variety: 'Alphonso (Badami)', quantityKg: 350, status: 'Active' },
+  L008: { farmerId: 'rajesh.kumar@greenvalley.in', cropName: 'Tomato', variety: 'Roma', quantityKg: 50, status: 'Active', askingPrice: 26 },
+  L009: { farmerId: 'basavaraj.m@mysurufresh.com', cropName: 'Tomato', variety: 'Cherry', quantityKg: 30, status: 'Active', askingPrice: 28 },
+  L010: { farmerId: 'savita.patil@belagaviorganics.in', cropName: 'Tomato', variety: 'Country (Nati)', quantityKg: 20, status: 'Active', askingPrice: 22 },
+  L011: { farmerId: 'suresh.naik@hublifresh.in', cropName: 'Onion', variety: 'Red Nasik', quantityKg: 150, status: 'Active', askingPrice: 19 },
+  L012: { farmerId: 'devadas.gowda@mandyafarms.com', cropName: 'Onion', variety: 'White Sweet', quantityKg: 120, status: 'Active', askingPrice: 21 },
+  L013: { farmerId: 'anita.shetty@coastalagri.in', cropName: 'Onion', variety: 'Small Sambar', quantityKg: 80, status: 'Active', askingPrice: 25 },
+  L014: { farmerId: 'rajesh.kumar@greenvalley.in', cropName: 'Potato', variety: 'Chipsona', quantityKg: 250, status: 'Active', askingPrice: 23 },
+  L015: { farmerId: 'savita.patil@belagaviorganics.in', cropName: 'Potato', variety: 'Pukhraj', quantityKg: 180, status: 'Active', askingPrice: 20 },
+}
+
+function normalizeListings(rawListings: ProduceListing[]): ProduceListing[] {
+  // Discard corrupted prefixed duplicates (e.g. 'moolyachirag90@gmail.com:L008')
+  const filtered = rawListings.filter((l) => !l.id.includes(':L'))
+  const existingIds = new Set(filtered.map((l) => l.id))
+  const missingSeeds = seedListings.filter((s) => !existingIds.has(s.id))
+  const combined = [...filtered, ...missingSeeds]
+
+  return combined.map((l) => {
+    const canonical = CANONICAL_SEED_LISTINGS[l.id]
+    if (canonical) {
+      return {
+        ...l,
+        farmerId: canonical.farmerId || l.farmerId,
+        cropName: canonical.cropName || l.cropName,
+        variety: canonical.variety || l.variety,
+        askingPrice: canonical.askingPrice ?? l.askingPrice,
+        status: canonical.status ?? l.status,
+      }
+    }
+    return l
+  })
+}
+
 function load(): State {
   try {
     const raw = localStorage.getItem(KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<State>
       if (parsed.listings && parsed.listings.length > 0) {
-        // Ensure any seed listings not yet in storage are merged in seamlessly
-        const existingIds = new Set(parsed.listings.map((l) => l.id))
-        const missingSeeds = seedListings.filter((s) => !existingIds.has(s.id))
         return {
-          listings: [...parsed.listings, ...missingSeeds],
+          listings: normalizeListings(parsed.listings),
           supply: parsed.supply ?? [],
           sales: parsed.sales ?? [],
           seeded: parsed.seeded ?? [],
@@ -40,7 +78,7 @@ function load(): State {
     /* ignore corrupted storage */
   }
   return {
-    listings: seedListings,
+    listings: normalizeListings(seedListings),
     supply: seedSupply,
     sales: seedSales,
     seeded: ['seed'],
@@ -58,7 +96,7 @@ async function fetchServerDb() {
       if (Array.isArray(data.listings) && data.listings.length > 0) {
         const existingIds = new Set(data.listings.map((l: any) => l.id))
         const localOnly = state.listings.filter((l) => !existingIds.has(l.id))
-        const mergedListings = [...data.listings, ...localOnly]
+        const mergedListings = normalizeListings([...data.listings, ...localOnly])
 
         const isDifferent =
           mergedListings.length !== state.listings.length ||

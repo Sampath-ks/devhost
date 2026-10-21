@@ -103,9 +103,7 @@ export default function SmartMultiFarmerRecommendation({
         l.cropName.trim().toLowerCase() === cropKey
     )
 
-    const totalAvailableKg = matchingListings.reduce((sum, l) => sum + l.quantityKg, 0)
-
-    if (matchingListings.length === 0 || totalAvailableKg <= 0) {
+    if (matchingListings.length === 0) {
       return {
         status: 'no_stock',
         cropName: selectedCrop,
@@ -130,6 +128,36 @@ export default function SmartMultiFarmerRecommendation({
       }
     })
     const uniqueFarmerListings = Array.from(farmerMap.values())
+
+    // Helper: calculate lot capacity in kg for the requested unit
+    // If unit is 'g' (e.g. 100 g), farmer lots are matched in grams (e.g. 50g, 30g, 20g = 0.05kg, 0.03kg, 0.02kg)
+    // If unit is 'kg' or above, farmer lots use full quantity in kg (e.g. 50kg, 30kg, 20kg).
+    const getFarmerLotCapacityKg = (listing: ProduceListing) => {
+      if (unit === 'g') {
+        return Math.round(listing.quantityKg * 0.001 * 1000) / 1000
+      }
+      return listing.quantityKg
+    }
+
+    const totalAvailableKg = uniqueFarmerListings.reduce(
+      (sum, l) => sum + getFarmerLotCapacityKg(l),
+      0
+    )
+
+    if (totalAvailableKg <= 0) {
+      return {
+        status: 'no_stock',
+        cropName: selectedCrop,
+        targetKg,
+        totalAvailableKg: 0,
+        totalAllocatedKg: 0,
+        totalPrice: 0,
+        effectiveAvgPricePerKg: 0,
+        shortfallKg: targetKg,
+        items: [],
+        farmerCount: 0,
+      }
+    }
 
     // 2. Sort matching farmers: Prioritize logged-in farmer if they produce this crop, then apply strategy
     const session = getSession()
@@ -164,7 +192,8 @@ export default function SmartMultiFarmerRecommendation({
     for (const listing of sorted) {
       if (remainingNeededKg <= 0.0001) break
 
-      const takeKg = Math.min(listing.quantityKg, remainingNeededKg)
+      const lotCapacityKg = getFarmerLotCapacityKg(listing)
+      const takeKg = Math.min(lotCapacityKg, remainingNeededKg)
       const roundedTakeKg = Math.round(takeKg * 1000) / 1000
 
       if (roundedTakeKg > 0) {
@@ -177,7 +206,7 @@ export default function SmartMultiFarmerRecommendation({
           farmerId: listing.farmerId,
           farmerName: farmerInfo.name,
           farmName: farmerInfo.farm,
-          availableKg: listing.quantityKg,
+          availableKg: lotCapacityKg,
           allocatedKg: roundedTakeKg,
           allocatedInUnit,
           pricePerKg: listing.askingPrice,
@@ -488,7 +517,7 @@ export default function SmartMultiFarmerRecommendation({
                 <div className="mt-2 bg-surface-2 rounded-lg p-2.5 space-y-1 border border-border">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted">Farmer Stock:</span>
-                    <span className="font-medium text-text">{item.availableKg.toLocaleString()} kg available</span>
+                    <span className="font-medium text-text">{formatUnitAmount(item.availableKg, unit)} available</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted">Price Rate:</span>
