@@ -9,7 +9,7 @@ import ProduceListing from '@/pages/farmer/ProduceListing'
 import MarketPrices from '@/pages/farmer/MarketPrices'
 import Marketplace from '@/pages/buyer/Marketplace'
 import StoreInventory from '@/pages/store/StoreInventory'
-import AuctionList from '@/pages/auction/AuctionList'
+import AuctionPage from '@/pages/auction/AuctionPage'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import Lab from '@/pages/Lab'
 
@@ -49,7 +49,7 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute allow={['farmer', 'user']} />}>
         <Route element={<DashboardShell />}>
           <Route path="/store" element={<StoreInventory />} />
-          <Route path="/auction" element={<AuctionList />} />
+          <Route path="/auction" element={<AuctionPage />} />
         </Route>
       </Route>
     </Routes>
