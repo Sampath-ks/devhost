@@ -1,6 +1,34 @@
 {
   "listings": [
     {
+      "farmerId": "qwert@gmail.com",
+      "cropName": "Onion",
+      "variety": "प्याज़ (Pyaaz)",
+      "quantityKg": 0,
+      "askingPrice": 650,
+      "qualityGrade": "A",
+      "harvestDate": "2026-10-22",
+      "location": "Nashik",
+      "id": "L1792642548137",
+      "status": "Sold Out",
+      "createdAt": "2026-10-22T04:15:48.137Z",
+      "updatedAt": "2026-10-22T04:22:20.887Z"
+    },
+    {
+      "farmerId": "qwert@gmail.com",
+      "cropName": "Tomato",
+      "variety": "टमाटर (Tamatar)",
+      "quantityKg": 678,
+      "askingPrice": 5000,
+      "qualityGrade": "A",
+      "harvestDate": "2026-10-22",
+      "location": "Nashik",
+      "id": "L1792642203265",
+      "status": "Active",
+      "createdAt": "2026-10-22T04:10:03.265Z",
+      "updatedAt": "2026-10-22T04:10:03.265Z"
+    },
+    {
       "farmerId": "chiraagkulal877@gmail.com",
       "cropName": "Tomato",
       "variety": "टमाटर (Tamatar)",
@@ -200,15 +228,15 @@
       "farmerId": "hiragkulal877@gmail.com",
       "cropName": "Onion",
       "variety": "प्याज़ (Pyaaz)",
-      "quantityKg": 1183,
+      "quantityKg": 0,
       "askingPrice": 545,
       "qualityGrade": "A",
       "harvestDate": "2026-10-20",
       "location": "Nashik",
       "id": "L1792515994708",
-      "status": "Active",
+      "status": "Sold Out",
       "createdAt": "2026-10-20T17:06:34.708Z",
-      "updatedAt": "2026-10-21T04:35:00.000Z"
+      "updatedAt": "2026-10-22T04:22:20.887Z"
     },
     {
       "id": "L008",
@@ -257,42 +285,42 @@
       "farmerId": "suresh.naik@hublifresh.in",
       "cropName": "Onion",
       "variety": "Red Nasik",
-      "quantityKg": 150,
+      "quantityKg": 0,
       "askingPrice": 19,
       "qualityGrade": "A",
       "harvestDate": "2026-10-17",
       "location": "Hubli, Karnataka",
-      "status": "Active",
+      "status": "Sold Out",
       "createdAt": "2026-10-17T10:00:00.000Z",
-      "updatedAt": "2026-10-21T04:26:25.973Z"
+      "updatedAt": "2026-10-22T04:22:20.887Z"
     },
     {
       "id": "L012",
       "farmerId": "devadas.gowda@mandyafarms.com",
       "cropName": "Onion",
       "variety": "White Sweet",
-      "quantityKg": 120,
+      "quantityKg": 0,
       "askingPrice": 21,
       "qualityGrade": "B",
       "harvestDate": "2026-10-18",
       "location": "Mandya, Karnataka",
-      "status": "Active",
+      "status": "Sold Out",
       "createdAt": "2026-10-18T12:00:00.000Z",
-      "updatedAt": "2026-10-21T04:26:25.973Z"
+      "updatedAt": "2026-10-22T04:22:20.887Z"
     },
     {
       "id": "L013",
       "farmerId": "anita.shetty@coastalagri.in",
       "cropName": "Onion",
       "variety": "Small Sambar",
-      "quantityKg": 80,
+      "quantityKg": 0,
       "askingPrice": 25,
       "qualityGrade": "A",
       "harvestDate": "2026-10-19",
       "location": "Udupi, Karnataka",
-      "status": "Active",
+      "status": "Sold Out",
       "createdAt": "2026-10-19T07:15:00.000Z",
-      "updatedAt": "2026-10-21T04:26:25.973Z"
+      "updatedAt": "2026-10-22T04:22:20.887Z"
     },
     {
       "id": "L014",
@@ -366,6 +394,92 @@
     }
   ],
   "orders": [
+    {
+      "id": "ORD-0889-936",
+      "listingId": "L011",
+      "cropName": "Onion",
+      "variety": "Red Nasik",
+      "farmerId": "suresh.naik@hublifresh.in",
+      "buyerId": "qwertt@gmail.com",
+      "quantityKg": 150,
+      "pricePerKg": 19,
+      "totalAmount": 2850,
+      "status": "PENDING_APPROVAL",
+      "createdAt": "2026-10-22T04:22:20.889Z",
+      "updatedAt": "2026-10-22T04:22:20.889Z"
+    },
+    {
+      "id": "ORD-0890-992",
+      "listingId": "L012",
+      "cropName": "Onion",
+      "variety": "White Sweet",
+      "farmerId": "devadas.gowda@mandyafarms.com",
+      "buyerId": "qwertt@gmail.com",
+      "quantityKg": 120,
+      "pricePerKg": 21,
+      "totalAmount": 2520,
+      "status": "PENDING_APPROVAL",
+      "createdAt": "2026-10-22T04:22:20.889Z",
+      "updatedAt": "2026-10-22T04:22:20.889Z"
+    },
+    {
+      "id": "ORD-0891-487",
+      "listingId": "L013",
+      "cropName": "Onion",
+      "variety": "Small Sambar",
+      "farmerId": "anita.shetty@coastalagri.in",
+      "buyerId": "qwertt@gmail.com",
+      "quantityKg": 80,
+      "pricePerKg": 25,
+      "totalAmount": 2000,
+      "status": "PENDING_APPROVAL",
+      "createdAt": "2026-10-22T04:22:20.889Z",
+      "updatedAt": "2026-10-22T04:22:20.889Z"
+    },
+    {
+      "id": "ORD-0892-726",
+      "listingId": "L1792515994708",
+      "cropName": "Onion",
+      "variety": "प्याज़ (Pyaaz)",
+      "farmerId": "hiragkulal877@gmail.com",
+      "buyerId": "qwertt@gmail.com",
+      "quantityKg": 1183,
+      "pricePerKg": 545,
+      "totalAmount": 644735,
+      "status": "PENDING_APPROVAL",
+      "createdAt": "2026-10-22T04:22:20.889Z",
+      "updatedAt": "2026-10-22T04:22:20.889Z"
+    },
+    {
+      "id": "ORD-0893-268",
+      "listingId": "L1792642548137",
+      "cropName": "Onion",
+      "variety": "प्याज़ (Pyaaz)",
+      "farmerId": "qwert@gmail.com",
+      "buyerId": "qwertt@gmail.com",
+      "quantityKg": 17,
+      "pricePerKg": 650,
+      "totalAmount": 11050,
+      "status": "COLLECTED_BY_BUYER",
+      "createdAt": "2026-10-22T04:22:20.889Z",
+      "updatedAt": "2026-10-22T04:35:47.231Z",
+      "farmerDeliveredAt": "2026-10-22T04:24:25.324Z",
+      "buyerCollectedAt": "2026-10-22T04:35:47.231Z"
+    },
+    {
+      "id": "ORD-4758-571",
+      "listingId": "L1792642548137",
+      "cropName": "Onion",
+      "variety": "प्याज़ (Pyaaz)",
+      "farmerId": "qwert@gmail.com",
+      "buyerId": "qwertt@gmail.com",
+      "quantityKg": 50,
+      "pricePerKg": 650,
+      "totalAmount": 32500,
+      "status": "ACCEPTED",
+      "createdAt": "2026-10-22T04:21:14.758Z",
+      "updatedAt": "2026-10-22T04:23:25.374Z"
+    },
     {
       "id": "ORD-0198-267",
       "listingId": "L010",
@@ -850,6 +964,126 @@
     }
   ],
   "notifications": [
+    {
+      "recipientId": "qwert@gmail.com",
+      "title": "Produce Collected by Buyer",
+      "message": "Buyer has collected order #ORD-0893-268 (Onion). Total payout ₹11050 approved.",
+      "orderId": "ORD-0893-268",
+      "type": "success",
+      "id": "notif-1792643747236-v6eo",
+      "read": false,
+      "createdAt": "2026-10-22T04:35:47.236Z"
+    },
+    {
+      "recipientId": "qwertt@gmail.com",
+      "title": "Order Completed",
+      "message": "Thank you for collecting your order #ORD-0893-268 of Onion. Transaction completed.",
+      "orderId": "ORD-0893-268",
+      "type": "success",
+      "id": "notif-1792643747233-o3ir",
+      "read": false,
+      "createdAt": "2026-10-22T04:35:47.233Z"
+    },
+    {
+      "recipientId": "qwert@gmail.com",
+      "title": "Store Delivery Confirmed",
+      "message": "Your delivery for order #ORD-0893-268 was verified and accepted into the Central Store warehouse.",
+      "orderId": "ORD-0893-268",
+      "type": "info",
+      "id": "notif-1792643065329-mmv8",
+      "read": false,
+      "createdAt": "2026-10-22T04:24:25.329Z"
+    },
+    {
+      "recipientId": "qwertt@gmail.com",
+      "title": "Produce Arrived at Central Store",
+      "message": "Your order #ORD-0893-268 (17kg Onion) has been delivered to Central Store and is ready for pickup!",
+      "orderId": "ORD-0893-268",
+      "type": "success",
+      "id": "notif-1792643065326-szfl",
+      "read": false,
+      "createdAt": "2026-10-22T04:24:25.326Z"
+    },
+    {
+      "recipientId": "qwertt@gmail.com",
+      "title": "Order Accepted by Farmer",
+      "message": "Farmer qwert@gmail.com has accepted your order for 50kg of Onion. Produce will now be delivered to Central Store.",
+      "orderId": "ORD-4758-571",
+      "type": "success",
+      "id": "notif-1792643005375-w3ce",
+      "read": false,
+      "createdAt": "2026-10-22T04:23:25.375Z"
+    },
+    {
+      "recipientId": "qwertt@gmail.com",
+      "title": "Order Accepted by Farmer",
+      "message": "Farmer qwert@gmail.com has accepted your order for 17kg of Onion. Produce will now be delivered to Central Store.",
+      "orderId": "ORD-0893-268",
+      "type": "success",
+      "id": "notif-1792643002379-s4yd",
+      "read": false,
+      "createdAt": "2026-10-22T04:23:22.379Z"
+    },
+    {
+      "recipientId": "qwert@gmail.com",
+      "title": "New Order Received",
+      "message": "qwertt@gmail.com requested an order: please provide 17kg of Onion (Total: ₹11050). Please accept or reject.",
+      "orderId": "ORD-0893-268",
+      "type": "info",
+      "id": "notif-1792642940898-mpv8",
+      "read": false,
+      "createdAt": "2026-10-22T04:22:20.898Z"
+    },
+    {
+      "recipientId": "hiragkulal877@gmail.com",
+      "title": "New Order Received",
+      "message": "qwertt@gmail.com requested an order: please provide 1183kg of Onion (Total: ₹644735). Please accept or reject.",
+      "orderId": "ORD-0892-726",
+      "type": "info",
+      "id": "notif-1792642940896-gr47",
+      "read": false,
+      "createdAt": "2026-10-22T04:22:20.896Z"
+    },
+    {
+      "recipientId": "anita.shetty@coastalagri.in",
+      "title": "New Order Received",
+      "message": "qwertt@gmail.com requested an order: please provide 80kg of Onion (Total: ₹2000). Please accept or reject.",
+      "orderId": "ORD-0891-487",
+      "type": "info",
+      "id": "notif-1792642940894-v7tl",
+      "read": false,
+      "createdAt": "2026-10-22T04:22:20.894Z"
+    },
+    {
+      "recipientId": "devadas.gowda@mandyafarms.com",
+      "title": "New Order Received",
+      "message": "qwertt@gmail.com requested an order: please provide 120kg of Onion (Total: ₹2520). Please accept or reject.",
+      "orderId": "ORD-0890-992",
+      "type": "info",
+      "id": "notif-1792642940893-ovra",
+      "read": false,
+      "createdAt": "2026-10-22T04:22:20.893Z"
+    },
+    {
+      "recipientId": "suresh.naik@hublifresh.in",
+      "title": "New Order Received",
+      "message": "qwertt@gmail.com requested an order: please provide 150kg of Onion (Total: ₹2850). Please accept or reject.",
+      "orderId": "ORD-0889-936",
+      "type": "info",
+      "id": "notif-1792642940891-ad7t",
+      "read": false,
+      "createdAt": "2026-10-22T04:22:20.891Z"
+    },
+    {
+      "recipientId": "qwert@gmail.com",
+      "title": "New Order Received",
+      "message": "qwertt@gmail.com requested an order: please provide 50kg of Onion (Total: ₹32500). Please accept or reject.",
+      "orderId": "ORD-4758-571",
+      "type": "info",
+      "id": "notif-1792642874760-c1ec",
+      "read": false,
+      "createdAt": "2026-10-22T04:21:14.760Z"
+    },
     {
       "recipientId": "moolyachirag90@gmail.com",
       "title": "New Order Received",

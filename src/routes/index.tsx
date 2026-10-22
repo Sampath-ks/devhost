@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import DashboardShell from '@/components/layout/DashboardShell'
 import { ProtectedRoute, PublicOnlyRoute } from '@/routes/ProtectedRoute'
 import Hub from '@/pages/Hub'
@@ -19,6 +19,7 @@ export default function AppRoutes() {
       <Route path="/" element={<Hub />} />
       <Route path="/lab" element={<Lab />} />
       <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/store" element={<Navigate to="/admin" replace />} />
 
       {/* Auth routes */}
       <Route element={<PublicOnlyRoute />}>
@@ -48,7 +49,7 @@ export default function AppRoutes() {
       {/* Portals open to logged-in accounts */}
       <Route element={<ProtectedRoute allow={['farmer', 'user']} />}>
         <Route element={<DashboardShell />}>
-          <Route path="/store" element={<StoreInventory />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Route>
       </Route>
 

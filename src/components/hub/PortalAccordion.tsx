@@ -29,7 +29,7 @@ const PORTALS: PortalData[] = [
     role: 'store',
     title: 'Central Store',
     description: 'Verified stock, tracked from receipt to collection.',
-    route: '/store',
+    route: '/admin',
     color: '#3E7C8C',
     image: '/assets/images/portals/warehouse.jpg',
     alt: 'Central storage warehouse managing agricultural produce inventory',
